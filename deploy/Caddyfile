@@ -1,10 +1,27 @@
-# Serves the built screens and forwards /api to the backend.
-# Task SEC3 adds the security headers.
+# Serves the built screens and forwards /api to the backend. Task SEC3 (PLAN Part 22).
+# Caddy is the only container with published ports; the backend and Ollama
+# are reachable only on the internal Docker network.
 
 {$DOMAIN:localhost} {
 	encode gzip
 
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "no-referrer"
+		Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()"
+		# Same origin only. Fonts are bundled, so nothing is loaded from elsewhere.
+		Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'"
+		Cross-Origin-Opener-Policy "same-origin"
+		-Server
+	}
+
 	handle /api/* {
+		# The backend refuses more than 64 KB too; this stops it at the door.
+		request_body {
+			max_size 64KB
+		}
 		reverse_proxy backend:8000
 	}
 

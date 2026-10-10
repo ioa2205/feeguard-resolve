@@ -1,5 +1,8 @@
-# Three containers (PLAN Part 12). Only `frontend` is reachable from outside.
+# Three containers (PLAN Part 12). Only `frontend` (Caddy) publishes ports.
+# `backend` and `ollama` have no `ports:` on purpose: they are reachable only on
+# the internal Docker network (task SEC3). Never add one.
 # Run from this folder:  docker compose up -d --build
+# Then, from another machine:  sh check_public.sh <domain>
 
 services:
   frontend:
