@@ -2,7 +2,7 @@
 
 **All customer data in this project is synthetic. There is no real personal data anywhere: not in the demo, not in the tests, not in the repository.**
 
-> **Status on 10 Oct 2026:** this page describes the planned method. The generator is not written yet. Real row counts and the exact settings are added after task A2.
+> **Status on 11 Oct 2026:** the generator is built (tasks A1, A2, A6). The counts below are from the default demo bank; the exact rules are in `docs/DECISIONS.md` D-021 and D-025.
 
 ## 1. What is fake
 
@@ -48,6 +48,23 @@ Fields that do not exist anywhere in the system: passport number, PINFL, full ca
 **The answer key is kept apart.** It is stored in a separate file that FeeGuard's code cannot open. Only the scoring script and the "show the answer key" button read it.
 
 **Same seed, same bank.** The generator uses one seeded random source and a fixed bank date, never the server clock. Anyone can rebuild the same bank and check our numbers.
+
+## 4a. The default demo bank, measured
+
+`python -m app.generator.world --seed 2026 --size 20000` (from `backend/`), world date 10 Oct 2026, every mistake rate 2%, 20 traps:
+
+| Rows | Count |
+|---|---|
+| Loans | 20,000 |
+| Customers | 18,154 |
+| Cards | 23,241 |
+| Schedule rows | 499,560 |
+| Debits | 109,557 |
+| Payments | 150,466 |
+| Penalties and fees | 8,389 |
+| Complaints | 305: 271 from wronged customers, 20 look-alikes, 14 about something else |
+
+Mistakes hidden: taken twice 400 · taken early 1,523 installments on 400 loans · recorded late, then fined 469 · fee not allowed 440. Base rates measured: PAYNET 15.4% of payments · two or more cards 24.9% of customers · changed schedule 5.2% of loans · the fee product 22.4% of loans.
 
 ## 5. Public sources
 

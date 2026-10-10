@@ -1,6 +1,6 @@
 # Third-party licences
 
-> **Status on 10 Oct 2026:** the backend versions are pinned in `backend/requirements.txt` and the frontend versions in `frontend/package-lock.json`. shadcn/ui and Recharts are planned and not installed yet. Before submission (task S5) this file is checked again against the real lock files, and exact versions are added.
+> **Status on 10 Oct 2026:** the backend versions are pinned in `backend/requirements.txt` and the frontend versions in `frontend/package-lock.json`. shadcn/ui and Recharts were planned but are not used: the screens are built from our own components and tables (checked against `frontend/package.json` on 11 Oct 2026). Before submission (task S5) this file is checked again against the real lock files, and exact versions are added.
 
 ## AI model
 
@@ -32,8 +32,6 @@
 | Vite | MIT |
 | TypeScript | Apache-2.0 |
 | Tailwind CSS | MIT |
-| shadcn/ui | MIT |
-| Recharts | MIT |
 
 ## Fonts
 

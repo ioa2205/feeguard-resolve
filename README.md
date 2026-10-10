@@ -4,7 +4,7 @@ A tool for bank staff. It checks whether a customer's loan-payment complaint is 
 
 WIUT Hackathon 2026 · FinTech / AI in Finance · Startup mode
 
-> **Status on 10 Oct 2026:** the plan and the design are finished. The scaffold is in: the API shapes are frozen, the health check works, and every screen says "Not built yet". The checks and the screens themselves are not written yet. Task status is in [docs/PROGRESS.md](docs/PROGRESS.md).
+> **Status on 11 Oct 2026, 02:10 Tashkent:** every screen and every API path is built and runs on this laptop. On the 20,000-loan demo bank the four checks found all 2,832 hidden mistakes with 0 false alarms and 0 of 20 look-alikes flagged ([docs/EVAL.md](docs/EVAL.md)). Not yet done: the public deploy, the choice of the local AI model, the 100 hand-written test complaints and the three legal facts. Task status is in [docs/PROGRESS.md](docs/PROGRESS.md).
 
 ## The problem
 
@@ -55,7 +55,7 @@ Live demo: _link comes here_. No account is needed.
 
 ## Run it yourself
 
-These steps run the scaffold. They were run on Windows with Python 3.12 and Node 24. They will be tested again on a clean machine before submission (task S5 in the plan).
+These steps were run on Windows with Python 3.12 and Node 24. They will be tested again on a clean machine before submission (task S5 in the plan).
 
 The backend and the frontend are two separate apps. Each runs alone.
 
@@ -68,7 +68,14 @@ python -m pytest -q
 python -m uvicorn app.main:app --reload --port 8000
 ```
 
-`http://localhost:8000/api/health` answers. `http://localhost:8000/api/docs` lists every path. A path that is not built yet answers 501 and names the task that builds it.
+`http://localhost:8000/api/health` answers. `http://localhost:8000/api/docs` lists every path. At its first start the backend builds the default demo bank (20,000 loans, seed 2026) into `worlds/default/`; this takes 15 to 30 s on a laptop. `DEFAULT_WORLD_SIZE=5000` builds a smaller one. Without a local AI model, complaints are read by rules and every screen says so.
+
+To measure detection against the answer key (the numbers of `docs/EVAL.md`):
+
+```
+cd backend
+python -m app.eval.run_eval --world default
+```
 
 **Frontend** (the screens, port 5173):
 
