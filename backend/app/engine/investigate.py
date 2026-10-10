@@ -5,7 +5,6 @@ every contract of the customer. The reading only chooses the period and names
 the claim that the result is compared with.
 """
 
-import calendar
 from dataclasses import dataclass
 from datetime import date, timedelta
 
@@ -39,16 +38,16 @@ class Outcome:
 
 
 def window_for(period: str | None, received: date) -> tuple[date, date]:
-    """The stated month with one month on each side. With no month: the 3 months before
-    the complaint."""
+    """The stated month with one month on each side. With no month: the three whole months
+    before the month of the complaint, and that month up to the complaint. Whole months,
+    so a payment early in a month is not cut off by a few days."""
     if period:
         month = int(period[:4]) * 12 + int(period[5:]) - 1
         first = date((month - 1) // 12, (month - 1) % 12 + 1, 1)
         last = date((month + 2) // 12, (month + 2) % 12 + 1, 1) - timedelta(days=1)
         return first, last
     month = received.year * 12 + received.month - 1 - MONTHS_WITHOUT_PERIOD
-    year, number = month // 12, month % 12 + 1
-    return date(year, number, min(received.day, calendar.monthrange(year, number)[1])), received
+    return date(month // 12, month % 12 + 1, 1), received
 
 
 def _inside(item: Finding | Cleared, window: tuple[date, date]) -> bool:

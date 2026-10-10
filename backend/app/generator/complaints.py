@@ -314,6 +314,11 @@ def _typos(rng: Random, text: str) -> str:
 
 def write(rng: Random, claim_type: str, lang: str, facts: Facts, any_fee: bool = False) -> str:
     """One complaint text."""
+    return compose(rng, claim_type, lang, facts, any_fee)[0]
+
+
+def compose(rng: Random, claim_type: str, lang: str, facts: Facts, any_fee: bool = False) -> tuple[str, str]:
+    """One complaint text, and the template its main sentence came from."""
     if claim_type == OTHER:
         bodies = UNRELATED_BODIES[lang]
     elif claim_type == ILLEGAL_FEE:
@@ -322,7 +327,8 @@ def write(rng: Random, claim_type: str, lang: str, facts: Facts, any_fee: bool =
         bodies = BODIES[claim_type][lang]
     words = lang if lang != "mixed" else "uz_latn"
     month = facts.on.month - 1
-    text = rng.choice(bodies).format(
+    body = rng.choice(bodies)
+    text = body.format(
         amount=write_amount(rng, facts.amount, lang),
         double=write_amount(rng, facts.amount * 2, lang),
         penalty=write_amount(rng, facts.penalty, lang),
@@ -350,12 +356,12 @@ def write(rng: Random, claim_type: str, lang: str, facts: Facts, any_fee: bool =
         text = text.lower()
     if rng.random() < 0.2:
         text = text.rstrip(".")
-    return text
+    return text, body
 
 
-def sample(rng: Random, count: int, as_of: date) -> list[tuple[str, str, str]]:
-    """`count` labelled texts with invented facts: (text, claim_type, lang). For training
-    the classifier; no demo bank is needed."""
+def sample(rng: Random, count: int, as_of: date) -> list[tuple[str, str, str, str]]:
+    """`count` labelled texts with invented facts: (text, claim_type, lang, template). For
+    training the classifier; no demo bank is needed."""
     labels = TYPES + (OTHER,)
     rows = []
     for number in range(count):
@@ -373,7 +379,8 @@ def sample(rng: Random, count: int, as_of: date) -> list[tuple[str, str, str]]:
             card=rng.choice(("HUMO", "UZCARD")),
         )
         any_fee = claim_type == ILLEGAL_FEE and rng.random() < 0.3
-        rows.append((write(rng, claim_type, lang, facts, any_fee), claim_type, lang))
+        text, body = compose(rng, claim_type, lang, facts, any_fee)
+        rows.append((text, claim_type, lang, body))
     return rows
 
 

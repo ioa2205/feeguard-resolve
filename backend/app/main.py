@@ -19,7 +19,7 @@ from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from . import audit, db, schemas
-from .ai import llm, parse_complaint
+from .ai import classifier, llm, parse_complaint
 from .connector import Bank
 from .engine import investigate as investigation
 from .engine import scan as scanning
@@ -83,6 +83,8 @@ async def _lifespan(_: FastAPI) -> AsyncIterator[None]:
     # The default demo bank is built once, in the background, when it is missing.
     # DEFAULT_WORLD_SIZE=5000 gives a smaller one on a small machine; 0 builds none.
     size = int(os.environ.get("DEFAULT_WORLD_SIZE", "20000"))
+    # The classifier of rules mode trains in a few seconds, before the first complaint needs it.
+    threading.Thread(target=classifier.model, daemon=True).start()
     if world.get_world(DEFAULT_WORLD_ID):
         threading.Thread(target=_warm, args=(DEFAULT_WORLD_ID,), daemon=True).start()
     elif size:

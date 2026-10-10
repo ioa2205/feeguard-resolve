@@ -158,7 +158,22 @@ def _plain(text: str) -> str:
     return text.lower().translate(_STRIP)
 
 
+# The trained classifier is asked only when no key word matched, and believed only when it is this sure.
+CLASSIFIER_SURE = 0.6
+
+
 def rules_claim(text: str, amounts: list[int], lang: str) -> str:
+    """Rules mode: key words first, then the trained classifier (PLAN Part 8)."""
+    found = key_words(text, amounts, lang)
+    if found != "OTHER":
+        return found
+    from . import classifier  # it trains on first use; the rest of this module does not need it
+
+    label, sure = classifier.classify(text)
+    return label if sure >= CLASSIFIER_SURE else "OTHER"
+
+
+def key_words(text: str, amounts: list[int], lang: str) -> str:
     plain = _plain(text)
     if lang == "ru":
         plain = re.sub(r"\b(\d+)\s*марта\b", r"\1 март", plain)  # in Russian "2 марта" is a date

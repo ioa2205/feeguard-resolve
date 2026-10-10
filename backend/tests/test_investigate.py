@@ -119,9 +119,20 @@ def test_the_window_is_the_stated_month_with_one_month_on_each_side():
     assert window_for("2026-12", RECEIVED) == (date(2026, 11, 1), date(2027, 1, 31))
 
 
-def test_without_a_month_the_window_is_the_three_months_before_the_complaint():
-    assert window_for(None, RECEIVED) == (date(2026, 6, 28), RECEIVED)
-    assert window_for(None, date(2026, 5, 31)) == (date(2026, 2, 28), date(2026, 5, 31))
+def test_without_a_month_the_window_is_the_three_whole_months_before_the_month_of_the_complaint():
+    assert window_for(None, RECEIVED) == (date(2026, 6, 1), RECEIVED)
+    assert window_for(None, date(2026, 2, 3)) == (date(2025, 11, 1), date(2026, 2, 3))
+
+
+def test_without_a_month_a_mistake_early_in_the_first_month_is_still_inside():
+    """Found on the default demo bank: a double debit on 5 July, a complaint on 10 October."""
+    loan = Loan(due=("2026-07-05", "2026-08-05", "2026-09-05"))
+    loan.take("2026-07-05T02:14:00")
+    loan.take("2026-07-05T02:16:00", card="CD-2")
+
+    outcome = decide("DOUBLE_DEBIT", None, date(2026, 10, 10), checked(loan))
+
+    assert outcome.verdict == "SUPPORTED"
 
 
 def test_a_mistake_outside_the_window_is_not_counted():
