@@ -11,7 +11,7 @@ Proof 1 and the cause finder are measured (11 Oct 2026). Proofs 3 and 5 and the 
 
 ## Proof 1 — Detection is correct (task A9)
 
-Measured 11 Oct 2026, 01:55 Tashkent · Commit `aa8faca` · Command: `python -m app.eval.run_eval --world default` (from `backend/`) · Demo bank `default`: seed 2026, 20,000 loans, every rate 2%, 20 traps · The same numbers come from `GET /api/eval/default` (the Scoreboard).
+Measured 11 Oct 2026, 01:18 Tashkent, right after commit `aa8faca` · Command: `python -m app.eval.run_eval --world default` (from `backend/`) · Demo bank `default`: seed 2026, 20,000 loans, every rate 2%, 20 traps · The same numbers come from `GET /api/eval/default` (the Scoreboard).
 
 The four checks run over every loan of the bank; each finding is matched to the answer key by type, loan and installment.
 
@@ -71,7 +71,7 @@ VPS size: _to add_ · Model: _to add_
 
 ## Cause finder (task A8)
 
-Measured 11 Oct 2026, 01:40 Tashkent · Commit `95df4db` · Same demo bank (seed 2026, 20,000 loans) · `causes.find` over the findings of `scan.check_bank`. "Share" is the share of the findings with that value (support); "times normal" is lift.
+Measured 11 Oct 2026, between 01:10 and 01:15 Tashkent, on the code of commit `95df4db` · Same demo bank (seed 2026, 20,000 loans) · `causes.find` over the findings of `scan.check_bank`. "Share" is the share of the findings with that value (support); "times normal" is lift.
 
 | Mistake | Planted cause (hidden settings) | Top cause found | Share | Times normal | Match |
 |---|---|---|---|---|---|
