@@ -1,1 +1,242 @@
-"""The only door to bank data. Opens bank.db read-only (CLAUDE.md rule 11). Task A3."""
+"""The only door to bank data. Opens bank.db read-only (CLAUDE.md rule 11). Task A3.
+
+In a real bank only this file changes: it would read the bank's exports or a
+read replica and return the same records.
+"""
+
+import json
+import re
+import sqlite3
+from collections import defaultdict
+from collections.abc import Iterable
+from dataclasses import dataclass, field
+from datetime import date, datetime, timedelta
+from pathlib import Path
+
+BANK_DB = "bank.db"
+SUCCESS, FAILED = "SUCCESS", "FAILED"
+# The next installment is at most this far after the world date.
+LOOK_AHEAD = timedelta(days=62)
+
+
+@dataclass(frozen=True, slots=True)
+class Installment:
+    contract_id: str
+    version: int
+    n: int
+    due_date: date
+    principal_due: int
+    interest_due: int
+    total_due: int
+
+
+@dataclass(frozen=True, slots=True)
+class Debit:
+    id: str
+    contract_id: str
+    card_id: str
+    amount: int
+    created_at: datetime
+    status: str
+    batch_run_id: str | None = None
+    retry_of: str | None = None
+    reversed_by: str | None = None
+    reversed_at: datetime | None = None
+
+    @property
+    def kept(self) -> bool:
+        """The money left the card and was not returned."""
+        return self.status == SUCCESS and self.reversed_by is None
+
+
+@dataclass(frozen=True, slots=True)
+class Payment:
+    id: str
+    contract_id: str
+    amount: int
+    channel: str
+    paid_at: datetime  # the money was received
+    posted_at: datetime  # the money was recorded on the loan
+    debit_id: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class Charge:
+    id: str
+    contract_id: str
+    kind: str
+    code: str
+    amount: int
+    charged_at: datetime
+    installment_n: int | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class Card:
+    id: str
+    network: str
+    last4: str
+    is_primary: bool
+
+    @property
+    def label(self) -> str:
+        return f"{self.network} ··{self.last4}"
+
+
+@dataclass(frozen=True, slots=True)
+class Contract:
+    id: str
+    customer_id: str
+    product_code: str
+    product_name: str
+    branch: str
+    principal: int
+    term_months: int
+    start_date: date
+    due_day: int
+    schedule_version: int
+    schedule_changed_on: date | None
+    early_repayment_requested_on: date | None
+    tariff_version: int
+    allowed_fees: tuple[str, ...]  # fee codes the contract lists
+
+
+@dataclass(slots=True)
+class ContractData:
+    """Everything the engine needs about one contract."""
+
+    contract: Contract
+    schedule: list[Installment] = field(default_factory=list)  # the version in force
+    debits: list[Debit] = field(default_factory=list)
+    payments: list[Payment] = field(default_factory=list)
+    charges: list[Charge] = field(default_factory=list)
+    cards: dict[str, Card] = field(default_factory=dict)
+
+
+def _day(text: str | None) -> date | None:
+    return date.fromisoformat(text) if text else None
+
+
+def _time(text: str | None) -> datetime | None:
+    return datetime.fromisoformat(text) if text else None
+
+
+class Bank:
+    def __init__(self, world_dir: Path) -> None:
+        path = (Path(world_dir) / BANK_DB).resolve()
+        if not path.is_file():
+            raise FileNotFoundError(path)
+        self._db = sqlite3.connect(f"{path.as_uri()}?mode=ro", uri=True, check_same_thread=False)
+        # Reading a whole bank is about three times faster with these two (measured, task A3).
+        self._db.execute("PRAGMA mmap_size = 1073741824")
+        self._db.execute("PRAGMA cache_size = -200000")
+        seed, size, as_of = self._db.execute("SELECT seed, size, as_of_date FROM world").fetchone()
+        self.seed: int = seed
+        self.size: int = size
+        self.as_of: date = date.fromisoformat(as_of)
+
+    def close(self) -> None:
+        self._db.close()
+
+    def __enter__(self) -> "Bank":
+        return self
+
+    def __exit__(self, *_: object) -> None:
+        self.close()
+
+    def contract_ids_of(self, customer_id: str) -> list[str]:
+        rows = self._db.execute("SELECT id FROM contracts WHERE customer_id = ? ORDER BY id", (customer_id,))
+        return [row[0] for row in rows]
+
+    def contract_text(self, contract_id: str) -> str | None:
+        row = self._db.execute("SELECT contract_text FROM contracts WHERE id = ?", (contract_id,)).fetchone()
+        return row[0] if row else None
+
+    def clauses(self, contract_id: str, numbers: Iterable[str]) -> list[tuple[str, str]]:
+        """The numbered clauses of a contract, quoted as written: (number, text)."""
+        text = self.contract_text(contract_id) or ""
+        found = []
+        for number in numbers:
+            match = re.search(rf"^{re.escape(number)}\. (.+)$", text, flags=re.MULTILINE)
+            if match:
+                found.append((number, match.group(1)))
+        return found
+
+    def load(self, contract_ids: Iterable[str] | None = None) -> dict[str, ContractData]:
+        """Contracts with their schedule in force, debits, payments, charges and cards.
+        With no ids: every contract of the bank."""
+        if contract_ids is None:
+            where, args = "", ()
+        else:
+            args = tuple(contract_ids)
+            if not args:
+                return {}
+            where = f"WHERE contract_id IN ({', '.join('?' * len(args))})"
+        by_id: dict[str, ContractData] = {}
+
+        contracts = self._db.execute(
+            f"""SELECT c.id, c.customer_id, c.product_code, p.name, c.branch, c.principal,
+                       c.term_months, c.start_date, c.due_day, c.schedule_version,
+                       c.schedule_changed_on, c.early_repayment_requested_on, c.tariff_version,
+                       p.allowed_fees_json
+                FROM contracts c JOIN products p ON p.code = c.product_code
+                {where.replace('contract_id', 'c.id')}""",
+            args,
+        )
+        fees_of: dict[str, tuple[str, ...]] = {}
+        customers: dict[str, list[ContractData]] = defaultdict(list)
+        for row in contracts:
+            fees = fees_of.setdefault(row[13], tuple(fee["code"] for fee in json.loads(row[13])))
+            data = ContractData(
+                Contract(*row[:7], date.fromisoformat(row[7]), row[8], row[9], _day(row[10]), _day(row[11]), row[12], fees)
+            )
+            by_id[row[0]] = data
+            customers[row[1]].append(data)
+
+        horizon = (self.as_of + LOOK_AHEAD).isoformat()
+        for row in self._db.execute(
+            f"""SELECT s.contract_id, s.version, s.n, s.due_date, s.principal_due, s.interest_due, s.total_due
+                FROM schedule_items s JOIN contracts c
+                  ON c.id = s.contract_id AND c.schedule_version = s.version
+                {where.replace('contract_id', 's.contract_id')} {'AND' if where else 'WHERE'} s.due_date <= ?
+                ORDER BY s.contract_id, s.n""",
+            (*args, horizon),
+        ):
+            by_id[row[0]].schedule.append(Installment(row[0], row[1], row[2], date.fromisoformat(row[3]), *row[4:]))
+
+        for row in self._db.execute(
+            f"""SELECT id, contract_id, card_id, amount, created_at, status, batch_run_id, retry_of,
+                       reversed_by, reversed_at
+                FROM debits {where} ORDER BY created_at, id""",
+            args,
+        ):
+            by_id[row[1]].debits.append(Debit(*row[:4], datetime.fromisoformat(row[4]), *row[5:9], _time(row[9])))
+
+        for row in self._db.execute(
+            f"SELECT id, contract_id, amount, channel, paid_at, posted_at, debit_id FROM payments {where} ORDER BY paid_at, id",
+            args,
+        ):
+            by_id[row[1]].payments.append(
+                Payment(*row[:4], datetime.fromisoformat(row[4]), datetime.fromisoformat(row[5]), row[6])
+            )
+
+        for row in self._db.execute(
+            f"SELECT id, contract_id, kind, code, amount, charged_at, installment_n FROM charges {where} ORDER BY charged_at, id",
+            args,
+        ):
+            by_id[row[1]].charges.append(Charge(*row[:5], datetime.fromisoformat(row[5]), row[6]))
+
+        owners = tuple(customers)
+        if not owners:
+            return by_id
+        if contract_ids is None:
+            cards = self._db.execute("SELECT id, customer_id, network, last4, is_primary FROM cards")
+        else:
+            cards = self._db.execute(
+                f"SELECT id, customer_id, network, last4, is_primary FROM cards WHERE customer_id IN ({', '.join('?' * len(owners))})",
+                owners,
+            )
+        for card_id, customer_id, network, last4, is_primary in cards:
+            for data in customers.get(customer_id, ()):
+                data.cards[card_id] = Card(card_id, network, last4, bool(is_primary))
+        return by_id

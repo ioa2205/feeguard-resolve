@@ -4,15 +4,19 @@ Task M0.2 froze every path of PLAN Part 10 here. A path that is not built yet
 answers 501 and names the task that builds it.
 """
 
+import os
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from typing import Annotated, NoReturn
 
-from fastapi import Depends, FastAPI, Header, Query, Request, Response
+from fastapi import Depends, FastAPI, Header, Path, Query, Request, Response
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from . import db
 from .errors import ApiError
+from .generator import world
 from .schemas import (
     DEFAULT_WORLD_ID,
     ActionPlan,
@@ -45,9 +49,23 @@ from .schemas import (
     WorldList,
 )
 
+DEFAULT_WORLD_SEED = 2026
+
+
+@asynccontextmanager
+async def _lifespan(_: FastAPI) -> AsyncIterator[None]:
+    # The default demo bank is built once, in the background, when it is missing.
+    # DEFAULT_WORLD_SIZE=5000 gives a smaller one on a small machine; 0 builds none.
+    size = int(os.environ.get("DEFAULT_WORLD_SIZE", "20000"))
+    if size and not world.get_world(DEFAULT_WORLD_ID):
+        world.start_build(world.Settings(seed=DEFAULT_WORLD_SEED, size=size), DEFAULT_WORLD_ID)
+    yield
+
+
 app = FastAPI(
     title="FeeGuard Resolve API",
     version="0.1.0",
+    lifespan=_lifespan,
     openapi_url="/api/openapi.json",
     docs_url="/api/docs",
     redoc_url=None,
@@ -79,7 +97,12 @@ async def _invalid_request(_: Request, exc: RequestValidationError) -> JSONRespo
     return _error(400, "INVALID_REQUEST", f"{where}: {first['msg']}")
 
 
-def _world(x_world_id: Annotated[str, Header(max_length=40)] = DEFAULT_WORLD_ID) -> str:
+# A world id becomes a folder name, so it is letters, digits and hyphens only.
+WORLD_ID = r"^[a-z0-9-]{1,40}$"
+WorldPath = Annotated[str, Path(pattern=WORLD_ID)]
+
+
+def _world(x_world_id: Annotated[str, Header(pattern=WORLD_ID)] = DEFAULT_WORLD_ID) -> str:
     return x_world_id
 
 
@@ -110,21 +133,32 @@ def health() -> Health:
 
 @app.post("/api/worlds", response_model=WorldCreated)
 def create_world(body: WorldCreate, actor: ActingAs) -> WorldCreated:
-    _not_built("A1")
+    """Returns at once. The demo bank is built in the background, one at a time."""
+    settings = world.Settings(
+        seed=body.seed, size=body.size, defects=dict(body.defects),
+        complaint_rate=body.complaint_rate, traps=body.traps, surprise=body.surprise,
+    )
+    try:
+        return WorldCreated(world_id=world.start_build(settings))
+    except world.Busy:
+        raise ApiError(429, "BUSY", "Another demo bank is being built. Try again in a moment.") from None
 
 
 @app.get("/api/worlds", response_model=WorldList)
 def list_worlds() -> WorldList:
-    _not_built("A1")
+    return WorldList(items=world.list_worlds())
 
 
 @app.get("/api/worlds/{world_id}", response_model=World)
-def get_world(world_id: str) -> World:
-    _not_built("A1")
+def get_world(world_id: WorldPath) -> World:
+    found = world.get_world(world_id)
+    if not found:
+        raise ApiError(404, "NOT_FOUND", "There is no demo bank with this id.")
+    return World(**found)
 
 
 @app.post("/api/worlds/{world_id}/tamper", response_model=TamperResult)
-def tamper(world_id: str, body: TamperRequest, actor: ActingAs) -> TamperResult:
+def tamper(world_id: WorldPath, body: TamperRequest, actor: ActingAs) -> TamperResult:
     _not_built("A10")
 
 
@@ -134,12 +168,12 @@ def search_customers(
     search: Annotated[str, Query(max_length=100)] = "",
     limit: Annotated[int, Query(ge=1, le=50)] = 20,
 ) -> CustomerList:
-    _not_built("A1")
+    _not_built("A5")
 
 
 @app.get("/api/customers/{customer_id}/statement", response_model=CustomerStatement)
 def customer_statement(customer_id: str, world: WorldId) -> CustomerStatement:
-    _not_built("A1")
+    _not_built("A5")
 
 
 @app.post("/api/complaints", response_model=ComplaintCreated)
@@ -227,10 +261,10 @@ def audit_log(
 
 
 @app.get("/api/eval/{world_id}", response_model=Scoreboard)
-def scoreboard(world_id: str) -> Scoreboard:
+def scoreboard(world_id: WorldPath) -> Scoreboard:
     _not_built("A9")
 
 
 @app.get("/api/eval/{world_id}/reveal", response_model=Reveal)
-def reveal(world_id: str, actor: ActingAs) -> Reveal:
+def reveal(world_id: WorldPath, actor: ActingAs) -> Reveal:
     _not_built("A9")

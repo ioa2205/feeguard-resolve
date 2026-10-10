@@ -1,5 +1,6 @@
-"""Rules of CLAUDE.md that a test can hold: 3, 4 and 11."""
+"""Rules of CLAUDE.md that a test can hold: 3, 4, 11 and 15."""
 
+import re
 from pathlib import Path
 
 BACKEND = Path(__file__).resolve().parents[1]
@@ -27,6 +28,20 @@ def test_only_the_generator_and_eval_name_the_answer_key():
 
 def test_only_the_connector_and_the_generator_name_the_bank_file():
     assert _mentions(("bank.db",), {"generator", "connector.py"}) == []
+
+
+def test_the_generator_uses_no_server_clock_and_no_unseeded_random():
+    forbidden = re.compile(
+        r"\.now\(|\.today\(|time\.time\(|utcnow\("
+        r"|\brandom\.(random|randrange|randint|choice|choices|sample|shuffle|uniform)\("
+    )
+    found = [
+        f"{path.relative_to(APP).as_posix()}: {match.group(0)}"
+        for path in sorted((APP / "generator").rglob("*.py"))
+        for match in forbidden.finditer(path.read_text(encoding="utf-8"))
+    ]
+
+    assert found == []
 
 
 def test_no_ai_sdk_in_the_dependencies():
