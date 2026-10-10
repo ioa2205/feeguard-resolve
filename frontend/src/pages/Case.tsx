@@ -10,7 +10,7 @@ import { formatDate, formatDateTime, formatMonth, formatSom } from '../format'
 import { useLoad } from '../hooks'
 import type { CaseResult, Cleared, ContractClause, Decision, DecisionAction, Evidence, Finding, Verdict } from '../types'
 import {
-  ACTING_AS, CLAIM, DECIDED, LANGUAGE, LANG_ATTR, LETTER, PAID_BY, READ_BY, RECEIVED_BY, VERDICT, verified,
+  ACTING_AS, CLAIM, DECIDED, LANGUAGE, LANG_ATTR, LETTER, MISTAKE, PAID_BY, READ_BY, RECEIVED_BY, VERDICT, verified,
 } from '../words'
 
 // The Case screen (DESIGN section 7.2): three columns, named by who is speaking.
@@ -237,13 +237,39 @@ function DecisionBlock({ result, onDecided }: { result: CaseResult; onDecided: (
   )
 }
 
+/** One link per kind of mistake found. It is the main action once a person has confirmed. */
+function FindOthers({ findings, confirmed }: { findings: Finding[]; confirmed: boolean }) {
+  const seen = new Set<string>()
+  const kinds = findings.filter((finding) => !seen.has(finding.type) && seen.add(finding.type))
+  if (!kinds.length) return null
+  return (
+    <Block title="Others with the same mistake">
+      <ul className="space-y-2">
+        {kinds.map((finding) => (
+          <li key={finding.finding_id}>
+            <Link
+              to={`/scan/${encodeURIComponent(finding.finding_id)}`}
+              className={`rounded-field border-ink inline-flex min-h-10 items-center border px-4 font-semibold ${
+                confirmed ? 'bg-ink text-sheet' : 'bg-sheet text-ink'
+              }`}
+            >
+              Find others like this: {MISTAKE[finding.type].toLowerCase()}
+            </Link>
+          </li>
+        ))}
+      </ul>
+      <p className="text-small mt-1">Checks every loan of the bank for the same mistake, also for customers who never complained.</p>
+    </Block>
+  )
+}
+
 function CaseView({ complaintId }: { complaintId: string }) {
   const { state, reload, replace } = useLoad<CaseResult>(async () => {
     try {
       return await api.getCase(complaintId)
     } catch (error) {
       // Not checked yet: check it now.
-      if (error instanceof ApiError && error.status === 404) return api.investigate(complaintId)
+      if (error instanceof ApiError && error.code === 'NOT_FOUND') return api.investigate(complaintId)
       throw error
     }
   }, [complaintId])
@@ -326,6 +352,13 @@ function CaseView({ complaintId }: { complaintId: string }) {
           <DecisionBlock result={result} onDecided={(made) => replace({ ...result, decision: made })} />
           <p className="text-small">Nothing is sent to the customer until a person confirms.</p>
 
+          <FindOthers findings={result.findings} confirmed={confirmed} />
+
+          {!result.draft_reply && (
+            <Block title="Letter to the customer">
+              <p>Not built yet: FeeGuard does not write the letter. Task B6 in the plan builds it.</p>
+            </Block>
+          )}
           {result.draft_reply && (
             <Block title="Letter to the customer">
               <article className="border-line bg-sheet aspect-[210/297] border p-6">
