@@ -52,7 +52,7 @@ By language:
 
 ## Proof 4 — Catches real-world cases (task P1)
 
-Measured 11 Oct 2026, between 02:26 and 02:31 Tashkent, on the code of commit `ec29cdf`, on this laptop · `python scripts/browser/preset_walk.py` (output in `evidence/p1-preset-walk.txt`), then the scan and `GET /api/eval/{bank}` of each preset bank · Each preset bank: seed 2025, 5,000 loans, only that mistake planted on 2% of loans, 20 look-alike complaints, 15% of wronged customers complain. Rebuilt from public news (Kun.uz and Spot, 3 Oct 2025); the customers are invented.
+Measured 11 Oct 2026, between 02:26 and 02:28 Tashkent, on the code of commit `ec29cdf`, on this laptop · `python scripts/browser/preset_walk.py` (output in `evidence/p1-preset-walk.txt`), then the scan and `GET /api/eval/{bank}` of each preset bank · Each preset bank: seed 2025, 5,000 loans, only that mistake planted on 2% of loans, 20 look-alike complaints, 15% of wronged customers complain. Rebuilt from public news (Kun.uz and Spot, 3 Oct 2025); the customers are invented.
 
 | Public case | One click to an open bank | One complaint | Find others | To return | Top cause found | Planted / found / false alarms | Look-alikes flagged |
 |---|---|---|---|---|---|---|---|
