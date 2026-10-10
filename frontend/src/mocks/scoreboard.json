@@ -1,0 +1,58 @@
+{
+  "world_id": "default",
+  "seed": 2026,
+  "size": 20000,
+  "per_type": [
+    {
+      "type": "DOUBLE_DEBIT",
+      "planted": 100,
+      "found": 100,
+      "missed": 0,
+      "false_alarms": 0,
+      "amount_planted": 50000000,
+      "amount_found": 50000000,
+      "traps_planted": 10,
+      "traps_flagged": 0
+    },
+    {
+      "type": "EARLY_DEBIT",
+      "planted": 100,
+      "found": 98,
+      "missed": 2,
+      "false_alarms": 1,
+      "amount_planted": 40000000,
+      "amount_found": 39200000,
+      "traps_planted": 10,
+      "traps_flagged": 0
+    },
+    {
+      "type": "LATE_POSTING",
+      "planted": 100,
+      "found": 99,
+      "missed": 1,
+      "false_alarms": 0,
+      "amount_planted": 3000000,
+      "amount_found": 2970000,
+      "traps_planted": 10,
+      "traps_flagged": 0
+    },
+    {
+      "type": "ILLEGAL_FEE",
+      "planted": 100,
+      "found": 100,
+      "missed": 0,
+      "false_alarms": 0,
+      "amount_planted": 20000000,
+      "amount_found": 20000000,
+      "traps_planted": 10,
+      "traps_flagged": 0
+    }
+  ],
+  "language_test": [],
+  "timings": {
+    "world_build_ms": null,
+    "investigate_ms": null,
+    "scan_ms": null
+  },
+  "elapsed_ms": 3000
+}

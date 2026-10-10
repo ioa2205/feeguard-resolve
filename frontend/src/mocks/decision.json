@@ -1,0 +1,10 @@
+{
+  "case_id": "C-1042",
+  "action": "CONFIRM",
+  "note": "",
+  "actor": "officer",
+  "at": "2026-08-28T14:02:00",
+  "corrected_verdict": null,
+  "corrected_excess": null,
+  "audit_id": "A-5513"
+}

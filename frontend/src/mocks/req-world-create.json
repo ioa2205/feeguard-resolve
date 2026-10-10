@@ -1,0 +1,13 @@
+{
+  "seed": 7741,
+  "size": 5000,
+  "defects": {
+    "DOUBLE_DEBIT": 0.02,
+    "EARLY_DEBIT": 0.01,
+    "LATE_POSTING": 0.02,
+    "ILLEGAL_FEE": 0.03
+  },
+  "complaint_rate": 0.15,
+  "traps": 20,
+  "surprise": false
+}

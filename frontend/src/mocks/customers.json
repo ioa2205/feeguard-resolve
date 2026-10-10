@@ -1,0 +1,33 @@
+{
+  "items": [
+    {
+      "customer_id": "CU-00417",
+      "full_name": "Dilnoza Yoʻldosheva",
+      "region": "Toshkent shahri",
+      "phone_masked": "+998 90 *** ** 17",
+      "preferred_lang": "uz_latn"
+    },
+    {
+      "customer_id": "CU-01588",
+      "full_name": "Sardor Tursunov",
+      "region": "Samarqand viloyati",
+      "phone_masked": "+998 93 *** ** 62",
+      "preferred_lang": "ru"
+    },
+    {
+      "customer_id": "CU-02203",
+      "full_name": "Malika Rahimova",
+      "region": "Fargʻona viloyati",
+      "phone_masked": "+998 91 *** ** 05",
+      "preferred_lang": "uz_cyrl"
+    },
+    {
+      "customer_id": "CU-03019",
+      "full_name": "Otabek Nazarov",
+      "region": "Buxoro viloyati",
+      "phone_masked": "+998 97 *** ** 48",
+      "preferred_lang": "uz_latn"
+    }
+  ],
+  "total": 4
+}

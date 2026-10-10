@@ -1,0 +1,94 @@
+{
+  "finding_type": "DOUBLE_DEBIT",
+  "affected_contracts": 214,
+  "affected_customers": 214,
+  "total_excess": 96300000,
+  "total_affected": 96300000,
+  "systemic": true,
+  "complained": 27,
+  "silent": 187,
+  "avg_days_early": null,
+  "cause": {
+    "attributes": [
+      { "name": "batch_run", "value": "2026-08-25 02:00", "support": 0.93, "lift": 41.2 },
+      { "name": "cards_count", "value": "2+", "support": 1.0, "lift": 3.1 }
+    ],
+    "sentence": "Almost all of these debits came from one batch run, and every affected customer has two or more cards. The automatic debit tried a second card without checking that the first debit had succeeded.",
+    "suggested_fix": "Check the final result of the first debit before any retry. Add an idempotency key to the debit request."
+  },
+  "items": [
+    {
+      "contract_id": "L-20931",
+      "customer_id": "CU-00417",
+      "customer_name": "Dilnoza Yoʻldosheva",
+      "region": "Toshkent shahri",
+      "installment_n": 7,
+      "amount_excess": 500000,
+      "amount_affected": 500000,
+      "days_early": null,
+      "complained": true,
+      "complaint_id": "C-1042"
+    },
+    {
+      "contract_id": "L-03318",
+      "customer_id": "CU-00962",
+      "customer_name": "Jasur Abdullayev",
+      "region": "Andijon viloyati",
+      "installment_n": 3,
+      "amount_excess": 320000,
+      "amount_affected": 320000,
+      "days_early": null,
+      "complained": false,
+      "complaint_id": null
+    },
+    {
+      "contract_id": "L-08127",
+      "customer_id": "CU-02751",
+      "customer_name": "Nigora Ergasheva",
+      "region": "Samarqand viloyati",
+      "installment_n": 11,
+      "amount_excess": 610000,
+      "amount_affected": 610000,
+      "days_early": null,
+      "complained": false,
+      "complaint_id": null
+    },
+    {
+      "contract_id": "L-12940",
+      "customer_id": "CU-04086",
+      "customer_name": "Bekzod Ismoilov",
+      "region": "Fargʻona viloyati",
+      "installment_n": 5,
+      "amount_excess": 275000,
+      "amount_affected": 275000,
+      "days_early": null,
+      "complained": false,
+      "complaint_id": null
+    },
+    {
+      "contract_id": "L-17663",
+      "customer_id": "CU-05530",
+      "customer_name": "Zarina Hamidova",
+      "region": "Toshkent shahri",
+      "installment_n": 9,
+      "amount_excess": 980000,
+      "amount_affected": 980000,
+      "days_early": null,
+      "complained": true,
+      "complaint_id": "C-1049"
+    },
+    {
+      "contract_id": "L-19205",
+      "customer_id": "CU-06118",
+      "customer_name": "Farrux Olimov",
+      "region": "Buxoro viloyati",
+      "installment_n": 2,
+      "amount_excess": 450000,
+      "amount_affected": 450000,
+      "days_early": null,
+      "complained": false,
+      "complaint_id": null
+    }
+  ],
+  "elapsed_ms": 2310
+}

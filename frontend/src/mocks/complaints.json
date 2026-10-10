@@ -1,0 +1,89 @@
+{
+  "items": [
+    {
+      "complaint_id": "C-1042",
+      "customer_id": "CU-00417",
+      "customer_name": "Dilnoza Yoʻldosheva",
+      "contract_id": "L-20931",
+      "text": "Avgust oyida oylik toʻlovim 500 ming edi, kartamdan 1 mln yechildi",
+      "lang": "uz_latn",
+      "channel": "APP",
+      "created_at": "2026-08-27T10:41:00",
+      "source": "GENERATED",
+      "status": "CHECKED",
+      "answer_due": null,
+      "verdict": "SUPPORTED"
+    },
+    {
+      "complaint_id": "C-1057",
+      "customer_id": "CU-01588",
+      "customer_name": "Sardor Tursunov",
+      "contract_id": "L-11874",
+      "text": "В сентябре с карты дважды списали платёж по кредиту, по 750 тыс. Верните деньги.",
+      "lang": "ru",
+      "channel": "CALL_CENTER",
+      "created_at": "2026-09-17T15:20:00",
+      "source": "GENERATED",
+      "status": "CONFIRMED",
+      "answer_due": null,
+      "verdict": "NOT_SUPPORTED"
+    },
+    {
+      "complaint_id": "C-1063",
+      "customer_id": "CU-02203",
+      "customer_name": "Malika Rahimova",
+      "contract_id": "L-07345",
+      "text": "Кредит тўловини 20-сентябрда Paynet орқали тўлаганман, лекин менга 45 минг сўм жарима ҳисоблашибди. Нима учун?",
+      "lang": "uz_cyrl",
+      "channel": "BRANCH",
+      "created_at": "2026-09-24T11:05:00",
+      "source": "GENERATED",
+      "status": "NEW",
+      "answer_due": null,
+      "verdict": null
+    },
+    {
+      "complaint_id": "C-1071",
+      "customer_id": "CU-03019",
+      "customer_name": "Otabek Nazarov",
+      "contract_id": "L-15502",
+      "text": "Assalomu alaykum, kreditni оформить qilganimda 300 000 soʻm комиссия ushlab qolishdi, shartnomada bunaqa narsa yoʻq edi.",
+      "lang": "mixed",
+      "channel": "WEB",
+      "created_at": "2026-10-01T09:12:00",
+      "source": "GENERATED",
+      "status": "NEW",
+      "answer_due": null,
+      "verdict": null
+    },
+    {
+      "complaint_id": "C-1080",
+      "customer_id": "CU-03544",
+      "customer_name": "Gulnora Saidova",
+      "contract_id": null,
+      "text": "Menga kredit boʻyicha qarzdorlik yoʻqligi haqida maʼlumotnoma kerak.",
+      "lang": "uz_latn",
+      "channel": "APP",
+      "created_at": "2026-10-05T16:48:00",
+      "source": "GENERATED",
+      "status": "CHECKED",
+      "answer_due": null,
+      "verdict": "OUT_OF_SCOPE"
+    },
+    {
+      "complaint_id": "C-1084",
+      "customer_id": "CU-04410",
+      "customer_name": "Rustam Qodirov",
+      "contract_id": null,
+      "text": "Платёж по графику 20 числа, а деньги списали 17-го. Почему раньше срока?",
+      "lang": "ru",
+      "channel": "APP",
+      "created_at": "2026-10-10T12:00:00",
+      "source": "JURY",
+      "status": "NEW",
+      "answer_due": null,
+      "verdict": null
+    }
+  ],
+  "total": 6
+}

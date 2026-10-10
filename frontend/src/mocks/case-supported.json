@@ -1,0 +1,275 @@
+{
+  "case_id": "C-1042",
+  "complaint": {
+    "complaint_id": "C-1042",
+    "customer_id": "CU-00417",
+    "customer_name": "Dilnoza Yoʻldosheva",
+    "contract_id": "L-20931",
+    "text": "Avgust oyida oylik toʻlovim 500 ming edi, kartamdan 1 mln yechildi",
+    "lang": "uz_latn",
+    "channel": "APP",
+    "created_at": "2026-08-27T10:41:00",
+    "source": "GENERATED",
+    "status": "CHECKED",
+    "answer_due": null,
+    "verdict": "SUPPORTED"
+  },
+  "understood": {
+    "claim_type": "DOUBLE_DEBIT",
+    "claimed_excess": 500000,
+    "period": "2026-08",
+    "mode": "llm"
+  },
+  "verdict": "SUPPORTED",
+  "claim_match": true,
+  "verdict_reason": "One payment of 500 000 soʻm was due on 25 Aug 2026. Two debits succeeded and neither was returned.",
+  "window": { "date_from": "2026-07-01", "date_to": "2026-09-30" },
+  "findings": [
+    {
+      "finding_id": "F-77",
+      "type": "DOUBLE_DEBIT",
+      "contract_id": "L-20931",
+      "installment_n": 7,
+      "amount_excess": 500000,
+      "amount_affected": 500000,
+      "days_early": null,
+      "explanation": "500 000 soʻm was due on 25 Aug 2026. Two successful debits of 500 000 soʻm were taken (HUMO 02:14, UZCARD 02:16). Neither was reversed.",
+      "legal_basis": null,
+      "evidence": {
+        "schedule_rows": [
+          {
+            "contract_id": "L-20931",
+            "version": 1,
+            "n": 7,
+            "due_date": "2026-08-25",
+            "principal_due": 428000,
+            "interest_due": 72000,
+            "total_due": 500000
+          }
+        ],
+        "debits": [
+          {
+            "id": "D-88121",
+            "contract_id": "L-20931",
+            "card_id": "CD-00417-1",
+            "card": "HUMO ··4471",
+            "amount": 500000,
+            "created_at": "2026-08-25T02:14:00",
+            "status": "SUCCESS",
+            "batch_run_id": "BR-2026-08-25",
+            "retry_of": null,
+            "reversed_by": null
+          },
+          {
+            "id": "D-88122",
+            "contract_id": "L-20931",
+            "card_id": "CD-00417-2",
+            "card": "UZCARD ··9038",
+            "amount": 500000,
+            "created_at": "2026-08-25T02:16:00",
+            "status": "SUCCESS",
+            "batch_run_id": "BR-2026-08-25",
+            "retry_of": "D-88121",
+            "reversed_by": null
+          }
+        ],
+        "payments": [
+          {
+            "id": "P-61377",
+            "contract_id": "L-20931",
+            "amount": 500000,
+            "channel": "AUTO_DEBIT",
+            "paid_at": "2026-08-25T02:14:00",
+            "posted_at": "2026-08-25T02:14:00",
+            "debit_id": "D-88121"
+          },
+          {
+            "id": "P-61378",
+            "contract_id": "L-20931",
+            "amount": 500000,
+            "channel": "AUTO_DEBIT",
+            "paid_at": "2026-08-25T02:16:00",
+            "posted_at": "2026-08-25T02:16:00",
+            "debit_id": "D-88122"
+          }
+        ],
+        "charges": [],
+        "contract_clauses": [
+          {
+            "clause": "4.2",
+            "text": "Qarz oluvchi har oyning 25-sanasida toʻlov jadvalida koʻrsatilgan summani toʻlaydi. Bank ushbu summani qarz oluvchining kartasidan bir marta yechib oladi."
+          }
+        ]
+      }
+    }
+  ],
+  "cleared": [],
+  "total_excess": 500000,
+  "total_affected": 500000,
+  "timelines": [
+    {
+      "contract_id": "L-20931",
+      "product_code": "CONS-12",
+      "product_name": "Consumer loan, 12 months",
+      "principal": 5000000,
+      "monthly_payment": 500000,
+      "due_day": 25,
+      "start_date": "2026-01-25",
+      "term_months": 12,
+      "schedule_version": 1,
+      "schedule_changed_on": null,
+      "early_repayment_requested_on": null,
+      "rows": [
+        {
+          "n": 6,
+          "due_date": "2026-07-25",
+          "owed": 500000,
+          "events": [
+            {
+              "kind": "TAKEN",
+              "at": "2026-07-25T02:13:00",
+              "day_offset": 0,
+              "amount": 500000,
+              "card": "HUMO ··4471",
+              "debit_status": "SUCCESS",
+              "channel": null,
+              "charge_kind": null,
+              "charge_name": null,
+              "wrong": false,
+              "source_id": "D-81007"
+            },
+            {
+              "kind": "RECORDED",
+              "at": "2026-07-25T02:13:00",
+              "day_offset": 0,
+              "amount": 500000,
+              "card": null,
+              "debit_status": null,
+              "channel": "AUTO_DEBIT",
+              "charge_kind": null,
+              "charge_name": null,
+              "wrong": false,
+              "source_id": "P-55290"
+            }
+          ],
+          "treatment": "CORRECT",
+          "finding_type": null,
+          "finding_id": null,
+          "cleared_reason": null,
+          "sentence": null,
+          "not_owed": 0,
+          "taken_early": 0,
+          "days_early": null,
+          "business_days_late": null
+        },
+        {
+          "n": 7,
+          "due_date": "2026-08-25",
+          "owed": 500000,
+          "events": [
+            {
+              "kind": "TAKEN",
+              "at": "2026-08-25T02:14:00",
+              "day_offset": 0,
+              "amount": 500000,
+              "card": "HUMO ··4471",
+              "debit_status": "SUCCESS",
+              "channel": null,
+              "charge_kind": null,
+              "charge_name": null,
+              "wrong": false,
+              "source_id": "D-88121"
+            },
+            {
+              "kind": "TAKEN",
+              "at": "2026-08-25T02:16:00",
+              "day_offset": 0,
+              "amount": 500000,
+              "card": "UZCARD ··9038",
+              "debit_status": "SUCCESS",
+              "channel": null,
+              "charge_kind": null,
+              "charge_name": null,
+              "wrong": true,
+              "source_id": "D-88122"
+            },
+            {
+              "kind": "RECORDED",
+              "at": "2026-08-25T02:14:00",
+              "day_offset": 0,
+              "amount": 500000,
+              "card": null,
+              "debit_status": null,
+              "channel": "AUTO_DEBIT",
+              "charge_kind": null,
+              "charge_name": null,
+              "wrong": false,
+              "source_id": "P-61377"
+            }
+          ],
+          "treatment": "WRONG",
+          "finding_type": "DOUBLE_DEBIT",
+          "finding_id": "F-77",
+          "cleared_reason": null,
+          "sentence": "One payment was due. Two debits succeeded and neither was returned.",
+          "not_owed": 500000,
+          "taken_early": 0,
+          "days_early": null,
+          "business_days_late": null
+        },
+        {
+          "n": 8,
+          "due_date": "2026-09-25",
+          "owed": 500000,
+          "events": [
+            {
+              "kind": "TAKEN",
+              "at": "2026-09-25T02:12:00",
+              "day_offset": 0,
+              "amount": 500000,
+              "card": "HUMO ··4471",
+              "debit_status": "SUCCESS",
+              "channel": null,
+              "charge_kind": null,
+              "charge_name": null,
+              "wrong": false,
+              "source_id": "D-94530"
+            },
+            {
+              "kind": "RECORDED",
+              "at": "2026-09-25T02:12:00",
+              "day_offset": 0,
+              "amount": 500000,
+              "card": null,
+              "debit_status": null,
+              "channel": "AUTO_DEBIT",
+              "charge_kind": null,
+              "charge_name": null,
+              "wrong": false,
+              "source_id": "P-66802"
+            }
+          ],
+          "treatment": "CORRECT",
+          "finding_type": null,
+          "finding_id": null,
+          "cleared_reason": null,
+          "sentence": null,
+          "not_owed": 0,
+          "taken_early": 0,
+          "days_early": null,
+          "business_days_late": null
+        }
+      ],
+      "other_charges": [],
+      "totals": { "owed": 1500000, "taken": 2000000, "not_owed": 500000, "taken_early": 0 }
+    }
+  ],
+  "draft_reply": {
+    "lang": "uz_latn",
+    "text": "Hurmatli Dilnoza Yoʻldosheva!\n\nSizning 2026-yil 27-avgustdagi murojaatingiz koʻrib chiqildi. 2026-yil 25-avgust kuni kredit boʻyicha 500 000 soʻm toʻlov kartalaringizdan ikki marta yechilgani aniqlandi. Ortiqcha yechilgan 500 000 soʻm sizga qaytariladi.\n\nNoqulaylik uchun uzr soʻraymiz.",
+    "source": "template"
+  },
+  "decision": null,
+  "audit_id": "A-5512",
+  "elapsed_ms": 1840
+}

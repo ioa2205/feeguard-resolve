@@ -1,0 +1,63 @@
+{
+  "customer": {
+    "customer_id": "CU-00417",
+    "full_name": "Dilnoza Yoʻldosheva",
+    "region": "Toshkent shahri",
+    "phone_masked": "+998 90 *** ** 17",
+    "preferred_lang": "uz_latn"
+  },
+  "cards": [
+    { "card_id": "CD-00417-1", "network": "HUMO", "label": "HUMO ··4471", "is_primary": true },
+    { "card_id": "CD-00417-2", "network": "UZCARD", "label": "UZCARD ··9038", "is_primary": false }
+  ],
+  "contracts": [
+    {
+      "contract_id": "L-20931",
+      "product_code": "CONS-12",
+      "product_name": "Consumer loan, 12 months",
+      "principal": 5000000,
+      "monthly_payment": 500000,
+      "due_day": 25,
+      "start_date": "2026-01-25",
+      "term_months": 12
+    }
+  ],
+  "messages": [
+    {
+      "at": "2026-07-25T02:13:00",
+      "kind": "DEBIT",
+      "contract_id": "L-20931",
+      "card": "HUMO ··4471",
+      "channel": null,
+      "charge_name": null,
+      "amount": 500000
+    },
+    {
+      "at": "2026-08-25T02:14:00",
+      "kind": "DEBIT",
+      "contract_id": "L-20931",
+      "card": "HUMO ··4471",
+      "channel": null,
+      "charge_name": null,
+      "amount": 500000
+    },
+    {
+      "at": "2026-08-25T02:16:00",
+      "kind": "DEBIT",
+      "contract_id": "L-20931",
+      "card": "UZCARD ··9038",
+      "channel": null,
+      "charge_name": null,
+      "amount": 500000
+    },
+    {
+      "at": "2026-09-25T02:12:00",
+      "kind": "DEBIT",
+      "contract_id": "L-20931",
+      "card": "HUMO ··4471",
+      "channel": null,
+      "charge_name": null,
+      "amount": 500000
+    }
+  ]
+}

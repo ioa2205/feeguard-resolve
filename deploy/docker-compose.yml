@@ -1,0 +1,42 @@
+# Three containers (PLAN Part 12). Only `frontend` is reachable from outside.
+# Run from this folder:  docker compose up -d --build
+
+services:
+  frontend:
+    build: ../frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN:-localhost}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - backend
+
+  backend:
+    build: ../backend
+    restart: unless-stopped
+    environment:
+      LLM_URL: http://ollama:11434
+      LLM_MODEL: ${LLM_MODEL:-}
+      WORLDS_DIR: /worlds
+    volumes:
+      - worlds:/worlds
+    depends_on:
+      - ollama
+
+  ollama:
+    image: ollama/ollama
+    restart: unless-stopped
+    volumes:
+      - ollama:/root/.ollama
+
+volumes:
+  caddy_data:
+  caddy_config:
+  worlds:
+  ollama:

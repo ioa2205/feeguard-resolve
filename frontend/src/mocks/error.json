@@ -1,0 +1,6 @@
+{
+  "error": {
+    "code": "NOT_FOUND",
+    "message": "No complaint with this number in this demo bank."
+  }
+}

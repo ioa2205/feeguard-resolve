@@ -1,0 +1,66 @@
+@import 'tailwindcss';
+
+/* The ten colour values of DESIGN section 4. No colour value is written anywhere else. */
+:root {
+  --desk: #e3ebe4;
+  --sheet: #fcfdfb;
+  --stripe: #eef4ef;
+  --ink: #17203a;
+  --ink-soft: #4c566e;
+  --line: #b5c3b8;
+  --stamp: #1f3f94;
+  --wrong: #c4221b;
+  --wrong-wash: #fbe9e6;
+  --specimen: #f2b705;
+}
+
+/* The Tailwind defaults for colour, type size, corners and shadow are switched
+   off, so only the values of DESIGN sections 4, 5 and 7 can reach a screen. */
+@theme inline {
+  --color-*: initial;
+  --color-desk: var(--desk);
+  --color-sheet: var(--sheet);
+  --color-stripe: var(--stripe);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-line: var(--line);
+  --color-stamp: var(--stamp);
+  --color-wrong: var(--wrong);
+  --color-wrong-wash: var(--wrong-wash);
+  --color-specimen: var(--specimen);
+
+  --font-*: initial;
+  --font-sans: 'Fira Sans', sans-serif;
+  --font-condensed: 'Fira Sans Condensed', 'Fira Sans', sans-serif;
+  --font-serif: 'Charis SIL', serif;
+
+  /* A size must not share its name with a colour: `text-stamp` would mean both. */
+  --text-*: initial;
+  --text-small: 13px;
+  --text-label: 13px;
+  --text-table: 15px;
+  --text-body: 16px;
+  --text-words: 17px;
+  --text-stamp-text: 18px;
+  --text-title: 30px;
+  --text-headline: 40px;
+
+  --radius-*: initial;
+  --radius-sheet: 2px;
+  --radius-field: 3px;
+
+  --shadow-*: initial;
+}
+
+body {
+  background: var(--desk);
+  color: var(--ink);
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+:focus-visible {
+  outline: 2px solid var(--stamp);
+  outline-offset: 2px;
+}

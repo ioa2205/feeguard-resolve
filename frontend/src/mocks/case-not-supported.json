@@ -1,0 +1,322 @@
+{
+  "case_id": "C-1057",
+  "complaint": {
+    "complaint_id": "C-1057",
+    "customer_id": "CU-01588",
+    "customer_name": "Sardor Tursunov",
+    "contract_id": "L-11874",
+    "text": "В сентябре с карты дважды списали платёж по кредиту, по 750 тыс. Верните деньги.",
+    "lang": "ru",
+    "channel": "CALL_CENTER",
+    "created_at": "2026-09-17T15:20:00",
+    "source": "GENERATED",
+    "status": "CONFIRMED",
+    "answer_due": null,
+    "verdict": "NOT_SUPPORTED"
+  },
+  "understood": {
+    "claim_type": "DOUBLE_DEBIT",
+    "claimed_excess": 750000,
+    "period": "2026-09",
+    "mode": "rules"
+  },
+  "verdict": "NOT_SUPPORTED",
+  "claim_match": null,
+  "verdict_reason": "The second debit paid the overdue installment of August 2026.",
+  "window": { "date_from": "2026-08-01", "date_to": "2026-10-31" },
+  "findings": [],
+  "cleared": [
+    {
+      "type": "DOUBLE_DEBIT",
+      "reason": "ARREARS_COVERED",
+      "contract_id": "L-11874",
+      "installment_n": 5,
+      "explanation": "The second debit paid the overdue installment of August 2026.",
+      "evidence": {
+        "schedule_rows": [
+          {
+            "contract_id": "L-11874",
+            "version": 1,
+            "n": 4,
+            "due_date": "2026-08-15",
+            "principal_due": 512000,
+            "interest_due": 238000,
+            "total_due": 750000
+          },
+          {
+            "contract_id": "L-11874",
+            "version": 1,
+            "n": 5,
+            "due_date": "2026-09-15",
+            "principal_due": 522000,
+            "interest_due": 228000,
+            "total_due": 750000
+          }
+        ],
+        "debits": [
+          {
+            "id": "D-86410",
+            "contract_id": "L-11874",
+            "card_id": "CD-01588-1",
+            "card": "UZCARD ··2206",
+            "amount": 750000,
+            "created_at": "2026-08-15T02:11:00",
+            "status": "FAILED",
+            "batch_run_id": "BR-2026-08-15",
+            "retry_of": null,
+            "reversed_by": null
+          },
+          {
+            "id": "D-90133",
+            "contract_id": "L-11874",
+            "card_id": "CD-01588-1",
+            "card": "UZCARD ··2206",
+            "amount": 750000,
+            "created_at": "2026-09-15T02:10:00",
+            "status": "SUCCESS",
+            "batch_run_id": "BR-2026-09-15",
+            "retry_of": null,
+            "reversed_by": null
+          },
+          {
+            "id": "D-90134",
+            "contract_id": "L-11874",
+            "card_id": "CD-01588-1",
+            "card": "UZCARD ··2206",
+            "amount": 750000,
+            "created_at": "2026-09-15T02:11:00",
+            "status": "SUCCESS",
+            "batch_run_id": "BR-2026-09-15",
+            "retry_of": null,
+            "reversed_by": null
+          }
+        ],
+        "payments": [
+          {
+            "id": "P-63021",
+            "contract_id": "L-11874",
+            "amount": 750000,
+            "channel": "AUTO_DEBIT",
+            "paid_at": "2026-09-15T02:10:00",
+            "posted_at": "2026-09-15T02:10:00",
+            "debit_id": "D-90133"
+          },
+          {
+            "id": "P-63022",
+            "contract_id": "L-11874",
+            "amount": 750000,
+            "channel": "AUTO_DEBIT",
+            "paid_at": "2026-09-15T02:11:00",
+            "posted_at": "2026-09-15T02:11:00",
+            "debit_id": "D-90134"
+          }
+        ],
+        "charges": [],
+        "contract_clauses": [
+          {
+            "clause": "4.3",
+            "text": "Agar navbatdagi toʻlov oʻz vaqtida toʻlanmasa, bank muddati oʻtgan summani keyingi yechib olishda undiradi."
+          }
+        ]
+      }
+    },
+    {
+      "type": "LATE_POSTING",
+      "reason": "PAID_AFTER_DUE_DATE",
+      "contract_id": "L-11874",
+      "installment_n": 4,
+      "explanation": "The payment arrived on 15 Sep 2026, after the due date.",
+      "evidence": {
+        "schedule_rows": [
+          {
+            "contract_id": "L-11874",
+            "version": 1,
+            "n": 4,
+            "due_date": "2026-08-15",
+            "principal_due": 512000,
+            "interest_due": 238000,
+            "total_due": 750000
+          }
+        ],
+        "debits": [],
+        "payments": [
+          {
+            "id": "P-63021",
+            "contract_id": "L-11874",
+            "amount": 750000,
+            "channel": "AUTO_DEBIT",
+            "paid_at": "2026-09-15T02:10:00",
+            "posted_at": "2026-09-15T02:10:00",
+            "debit_id": "D-90133"
+          }
+        ],
+        "charges": [
+          {
+            "id": "CH-4471",
+            "contract_id": "L-11874",
+            "kind": "PENALTY",
+            "code": "LATE_PAYMENT",
+            "name": "Late payment penalty",
+            "amount": 23250,
+            "charged_at": "2026-09-15T02:10:00",
+            "installment_n": 4
+          }
+        ],
+        "contract_clauses": [
+          {
+            "clause": "5.1",
+            "text": "Toʻlov kechiktirilgan har bir kun uchun muddati oʻtgan summaning 0,1 foizi miqdorida penya hisoblanadi."
+          }
+        ]
+      }
+    }
+  ],
+  "total_excess": 0,
+  "total_affected": 0,
+  "timelines": [
+    {
+      "contract_id": "L-11874",
+      "product_code": "CONS-24",
+      "product_name": "Consumer loan, 24 months",
+      "principal": 12000000,
+      "monthly_payment": 750000,
+      "due_day": 15,
+      "start_date": "2026-04-15",
+      "term_months": 24,
+      "schedule_version": 1,
+      "schedule_changed_on": null,
+      "early_repayment_requested_on": null,
+      "rows": [
+        {
+          "n": 4,
+          "due_date": "2026-08-15",
+          "owed": 750000,
+          "events": [
+            {
+              "kind": "TAKEN",
+              "at": "2026-08-15T02:11:00",
+              "day_offset": 0,
+              "amount": 750000,
+              "card": "UZCARD ··2206",
+              "debit_status": "FAILED",
+              "channel": null,
+              "charge_kind": null,
+              "charge_name": null,
+              "wrong": false,
+              "source_id": "D-86410"
+            },
+            {
+              "kind": "TAKEN",
+              "at": "2026-09-15T02:10:00",
+              "day_offset": 31,
+              "amount": 750000,
+              "card": "UZCARD ··2206",
+              "debit_status": "SUCCESS",
+              "channel": null,
+              "charge_kind": null,
+              "charge_name": null,
+              "wrong": false,
+              "source_id": "D-90133"
+            },
+            {
+              "kind": "RECORDED",
+              "at": "2026-09-15T02:10:00",
+              "day_offset": 31,
+              "amount": 750000,
+              "card": null,
+              "debit_status": null,
+              "channel": "AUTO_DEBIT",
+              "charge_kind": null,
+              "charge_name": null,
+              "wrong": false,
+              "source_id": "P-63021"
+            },
+            {
+              "kind": "CHARGED",
+              "at": "2026-09-15T02:10:00",
+              "day_offset": 31,
+              "amount": 23250,
+              "card": null,
+              "debit_status": null,
+              "channel": null,
+              "charge_kind": "PENALTY",
+              "charge_name": "Late payment penalty",
+              "wrong": false,
+              "source_id": "CH-4471"
+            }
+          ],
+          "treatment": "CHECKED_CORRECT",
+          "finding_type": null,
+          "finding_id": null,
+          "cleared_reason": "PAID_AFTER_DUE_DATE",
+          "sentence": "The payment arrived on 15 Sep 2026, after the due date.",
+          "not_owed": 0,
+          "taken_early": 0,
+          "days_early": null,
+          "business_days_late": null
+        },
+        {
+          "n": 5,
+          "due_date": "2026-09-15",
+          "owed": 750000,
+          "events": [
+            {
+              "kind": "TAKEN",
+              "at": "2026-09-15T02:11:00",
+              "day_offset": 0,
+              "amount": 750000,
+              "card": "UZCARD ··2206",
+              "debit_status": "SUCCESS",
+              "channel": null,
+              "charge_kind": null,
+              "charge_name": null,
+              "wrong": false,
+              "source_id": "D-90134"
+            },
+            {
+              "kind": "RECORDED",
+              "at": "2026-09-15T02:11:00",
+              "day_offset": 0,
+              "amount": 750000,
+              "card": null,
+              "debit_status": null,
+              "channel": "AUTO_DEBIT",
+              "charge_kind": null,
+              "charge_name": null,
+              "wrong": false,
+              "source_id": "P-63022"
+            }
+          ],
+          "treatment": "CHECKED_CORRECT",
+          "finding_type": null,
+          "finding_id": null,
+          "cleared_reason": "ARREARS_COVERED",
+          "sentence": "The second debit paid the overdue installment of August 2026.",
+          "not_owed": 0,
+          "taken_early": 0,
+          "days_early": null,
+          "business_days_late": null
+        }
+      ],
+      "other_charges": [],
+      "totals": { "owed": 1500000, "taken": 1500000, "not_owed": 0, "taken_early": 0 }
+    }
+  ],
+  "draft_reply": {
+    "lang": "ru",
+    "text": "Уважаемый Сардор Турсунов!\n\nВаше обращение от 17 сентября 2026 года рассмотрено. 15 сентября 2026 года с вашей карты были списаны два платежа по 750 000 сум: один за сентябрь, второй в счёт просроченного платежа за август 2026 года. Оба списания выполнены в соответствии с договором.",
+    "source": "template"
+  },
+  "decision": {
+    "case_id": "C-1057",
+    "action": "CONFIRM",
+    "note": "",
+    "actor": "officer",
+    "at": "2026-09-18T09:30:00",
+    "corrected_verdict": null,
+    "corrected_excess": null,
+    "audit_id": "A-5531"
+  },
+  "audit_id": "A-5530",
+  "elapsed_ms": 1420
+}

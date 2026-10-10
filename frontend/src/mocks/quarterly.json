@@ -1,0 +1,113 @@
+{
+  "quarter": "2026-Q3",
+  "date_from": "2026-07-01",
+  "date_to": "2026-09-30",
+  "complaints_total": 412,
+  "by_type": [
+    {
+      "key": "DOUBLE_DEBIT",
+      "count": 141
+    },
+    {
+      "key": "LATE_POSTING",
+      "count": 97
+    },
+    {
+      "key": "ILLEGAL_FEE",
+      "count": 74
+    },
+    {
+      "key": "EARLY_DEBIT",
+      "count": 58
+    },
+    {
+      "key": "OTHER",
+      "count": 42
+    }
+  ],
+  "by_region": [
+    {
+      "key": "Toshkent shahri",
+      "count": 126
+    },
+    {
+      "key": "Samarqand viloyati",
+      "count": 71
+    },
+    {
+      "key": "Fargʻona viloyati",
+      "count": 64
+    },
+    {
+      "key": "Andijon viloyati",
+      "count": 52
+    },
+    {
+      "key": "Buxoro viloyati",
+      "count": 38
+    },
+    {
+      "key": "Other regions",
+      "count": 61
+    }
+  ],
+  "by_channel": [
+    {
+      "key": "APP",
+      "count": 173
+    },
+    {
+      "key": "CALL_CENTER",
+      "count": 118
+    },
+    {
+      "key": "BRANCH",
+      "count": 77
+    },
+    {
+      "key": "WEB",
+      "count": 44
+    }
+  ],
+  "by_verdict": [
+    {
+      "key": "SUPPORTED",
+      "count": 233
+    },
+    {
+      "key": "NOT_SUPPORTED",
+      "count": 96
+    },
+    {
+      "key": "NEEDS_INFO",
+      "count": 41
+    },
+    {
+      "key": "OUT_OF_SCOPE",
+      "count": 42
+    }
+  ],
+  "recurring": [
+    {
+      "finding_type": "DOUBLE_DEBIT",
+      "affected_contracts": 214,
+      "affected_customers": 214,
+      "total_excess": 96300000,
+      "total_affected": 96300000,
+      "cause_sentence": "Almost all of these debits came from one batch run on 25 Aug 2026."
+    }
+  ],
+  "measures": [
+    {
+      "id": "AP-1",
+      "finding_type": "DOUBLE_DEBIT",
+      "deficiency": "In the batch run of 25 Aug 2026 the automatic debit tried a second card without checking that the first debit had succeeded. 214 customers were charged twice.",
+      "measures": "Check the final result of the first debit before any retry. Add an idempotency key to the debit request. Return 96 300 000 soʻm to the 214 customers.",
+      "deadline": null,
+      "responsible_unit": "",
+      "responsible_exec": "",
+      "monitoring_deadline": null,
+      "status": "DRAFT"
+    }
+  ]
+}

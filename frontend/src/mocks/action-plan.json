@@ -1,0 +1,16 @@
+{
+  "items": [
+    {
+      "id": "AP-1",
+      "finding_type": "DOUBLE_DEBIT",
+      "deficiency": "In the batch run of 25 Aug 2026 the automatic debit tried a second card without checking that the first debit had succeeded. 214 customers were charged twice.",
+      "measures": "Check the final result of the first debit before any retry. Add an idempotency key to the debit request. Return 96 300 000 soʻm to the 214 customers.",
+      "deadline": null,
+      "responsible_unit": "",
+      "responsible_exec": "",
+      "monitoring_deadline": null,
+      "status": "DRAFT"
+    }
+  ],
+  "format_basis": "TO VERIFY"
+}

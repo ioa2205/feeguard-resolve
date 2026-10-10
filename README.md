@@ -4,7 +4,7 @@ A tool for bank staff. It checks whether a customer's loan-payment complaint is 
 
 WIUT Hackathon 2026 · FinTech / AI in Finance · Startup mode
 
-> **Status on 10 Oct 2026:** the plan and the design are finished. The code is not written yet. This page gets the live demo link and the run steps as soon as they exist.
+> **Status on 10 Oct 2026:** the plan and the design are finished. The scaffold is in: the API shapes are frozen, the health check works, and every screen says "Not built yet". The checks and the screens themselves are not written yet. Task status is in [docs/PROGRESS.md](docs/PROGRESS.md).
 
 ## The problem
 
@@ -55,7 +55,37 @@ Live demo: _link comes here_. No account is needed.
 
 ## Run it yourself
 
-Not possible yet, because the code is not written. The steps will be here, and they will be tested on a clean machine before submission (task S5 in the plan).
+These steps run the scaffold. They were run on Windows with Python 3.12 and Node 24. They will be tested again on a clean machine before submission (task S5 in the plan).
+
+The backend and the frontend are two separate apps. Each runs alone.
+
+**Backend** (the API, port 8000):
+
+```
+cd backend
+pip install -r requirements.txt
+python -m pytest -q
+python -m uvicorn app.main:app --reload --port 8000
+```
+
+`http://localhost:8000/api/health` answers. `http://localhost:8000/api/docs` lists every path. A path that is not built yet answers 501 and names the task that builds it.
+
+**Frontend** (the screens, port 5173):
+
+```
+cd frontend
+npm install
+npm run dev          # uses the backend on port 8000
+npm run dev:mocks    # no backend needed: runs on the sample data in src/mocks
+```
+
+**After a change to an API shape or a mock**, from the repository root:
+
+```
+python scripts/check_contract.py
+```
+
+**With Docker** (not tested yet): `cd deploy`, copy `.env.example` to `.env`, then `docker compose up -d --build`.
 
 ## Documents
 

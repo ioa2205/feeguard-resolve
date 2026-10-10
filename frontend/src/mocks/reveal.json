@@ -1,0 +1,50 @@
+{
+  "world_id": "default",
+  "seed": 2026,
+  "settings": {
+    "defects": {
+      "DOUBLE_DEBIT": 0.02,
+      "EARLY_DEBIT": 0.01,
+      "LATE_POSTING": 0.02,
+      "ILLEGAL_FEE": 0.03
+    },
+    "complaint_rate": 0.15,
+    "traps": 20,
+    "surprise": false
+  },
+  "counts": [
+    {
+      "defect_type": "DOUBLE_DEBIT",
+      "is_trap": false,
+      "count": 100,
+      "amount": 50000000
+    },
+    {
+      "defect_type": "DOUBLE_DEBIT",
+      "is_trap": true,
+      "count": 10,
+      "amount": 0
+    }
+  ],
+  "items": [
+    {
+      "id": "K-1",
+      "defect_type": "DOUBLE_DEBIT",
+      "contract_id": "L-20931",
+      "installment_n": 7,
+      "excess_amount": 500000,
+      "cause_tag": "batch_retry_second_card",
+      "is_trap": false
+    },
+    {
+      "id": "K-2",
+      "defect_type": "DOUBLE_DEBIT",
+      "contract_id": "L-11874",
+      "installment_n": 5,
+      "excess_amount": 0,
+      "cause_tag": "arrears",
+      "is_trap": true
+    }
+  ],
+  "total": 110
+}

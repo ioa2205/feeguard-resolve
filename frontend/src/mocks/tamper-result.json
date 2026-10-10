@@ -1,0 +1,15 @@
+{
+  "debit": {
+    "id": "D-99001",
+    "contract_id": "L-20931",
+    "card_id": "CD-00417-2",
+    "card": "UZCARD ··9038",
+    "amount": 500000,
+    "created_at": "2026-10-10T02:15:00",
+    "status": "SUCCESS",
+    "batch_run_id": null,
+    "retry_of": null,
+    "reversed_by": null
+  },
+  "audit_id": "A-5520"
+}

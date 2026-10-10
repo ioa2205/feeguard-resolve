@@ -1,0 +1,55 @@
+{
+  "chain_intact": true,
+  "broken_at": null,
+  "entries": [
+    {
+      "id": "A-5515",
+      "at": "2026-08-28T14:10:00",
+      "actor": "compliance",
+      "action": "export.refunds",
+      "payload": {
+        "finding_type": "DOUBLE_DEBIT",
+        "rows": 214
+      },
+      "prev_hash": "cd0384e36a21dbea1ac627a24978102d4c64f4cd13b833e284b9684aa8663140",
+      "hash": "dfdec1b63f8ed6370ff7392140beb796d7e33c1f1a7824206048fb74cfebd382"
+    },
+    {
+      "id": "A-5514",
+      "at": "2026-08-28T14:03:00",
+      "actor": "officer",
+      "action": "finding.scan",
+      "payload": {
+        "finding_id": "F-77",
+        "affected_contracts": 214
+      },
+      "prev_hash": "280f7d8be83bb7b1e2af132752a407b3f89fbb0391eec7ff023a4e25f87242e6",
+      "hash": "cd0384e36a21dbea1ac627a24978102d4c64f4cd13b833e284b9684aa8663140"
+    },
+    {
+      "id": "A-5513",
+      "at": "2026-08-28T14:02:00",
+      "actor": "officer",
+      "action": "case.decision",
+      "payload": {
+        "case_id": "C-1042",
+        "action": "CONFIRM"
+      },
+      "prev_hash": "2b0e4186dbc9dcfb76e4ff7becfb13aa4d06add82647dc14f9b5b266fa412c09",
+      "hash": "280f7d8be83bb7b1e2af132752a407b3f89fbb0391eec7ff023a4e25f87242e6"
+    },
+    {
+      "id": "A-5512",
+      "at": "2026-08-28T13:58:00",
+      "actor": "officer",
+      "action": "case.investigate",
+      "payload": {
+        "complaint_id": "C-1042",
+        "verdict": "SUPPORTED"
+      },
+      "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+      "hash": "2b0e4186dbc9dcfb76e4ff7becfb13aa4d06add82647dc14f9b5b266fa412c09"
+    }
+  ],
+  "total": 4
+}

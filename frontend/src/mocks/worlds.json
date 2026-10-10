@@ -1,0 +1,20 @@
+{
+  "items": [
+    {
+      "world_id": "default",
+      "status": "ready",
+      "progress": 100,
+      "size": 20000,
+      "seed": 2026,
+      "as_of_date": "2026-10-10"
+    },
+    {
+      "world_id": "w-7741",
+      "status": "building",
+      "progress": 40,
+      "size": 5000,
+      "seed": 7741,
+      "as_of_date": "2026-10-10"
+    }
+  ]
+}
