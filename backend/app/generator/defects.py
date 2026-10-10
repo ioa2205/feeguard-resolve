@@ -42,6 +42,10 @@ CREATE TABLE ground_truth (
     is_trap INTEGER NOT NULL
 );
 CREATE TABLE config (key TEXT PRIMARY KEY, config_json TEXT NOT NULL);
+CREATE TABLE complaint_key (
+    complaint_id TEXT PRIMARY KEY, kind TEXT NOT NULL, claim_type TEXT NOT NULL, contract_id TEXT,
+    installment_n INTEGER, expected_verdict TEXT NOT NULL, also_planted INTEGER NOT NULL
+);
 """
 
 # One answer-key row: (defect_type, contract_id, installment_n, excess_amount, cause_tag, is_trap).
@@ -180,10 +184,12 @@ def pick_traps(lookalikes: dict[str, list[tuple[str, int | None]]], count: int, 
     return rows
 
 
-def write_truth(folder: Path, planted: list[TruthRow], traps: list[TruthRow], config: dict) -> None:
+def write_truth(folder: Path, planted: list[TruthRow], traps: list[TruthRow], config: dict,
+                complaint_key: list[tuple] = ()) -> None:
     db = sqlite3.connect(folder / TRUTH_DB)
     try:
         db.executescript(TRUTH_TABLES)
+        db.executemany("INSERT INTO complaint_key VALUES (?, ?, ?, ?, ?, ?, ?)", complaint_key)
         db.executemany(
             "INSERT INTO ground_truth VALUES (?, ?, ?, ?, ?, ?, ?)",
             [(f"K-{number:05d}", *row) for number, row in enumerate(planted + traps, start=1)],

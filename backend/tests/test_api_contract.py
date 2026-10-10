@@ -40,11 +40,11 @@ def test_the_published_paths_are_exactly_the_frozen_list(client):
 
 
 def test_a_path_that_is_not_built_answers_501_in_the_error_shape(client):
-    response = client.get("/api/complaints")
+    response = client.get("/api/audit")
 
     assert response.status_code == 501
     assert response.json()["error"]["code"] == "NOT_BUILT"
-    assert "A5" in response.json()["error"]["message"]
+    assert "A11" in response.json()["error"]["message"]
 
 
 def test_an_unknown_path_answers_404_in_the_error_shape(client):
@@ -80,4 +80,6 @@ def test_a_valid_request_gets_past_the_checks(client):
         headers={"X-Actor": "jury", "X-World-Id": "default"},
     )
 
-    assert response.status_code == 501
+    # Past the shape checks: the answer is about the demo bank, which this test did not build.
+    assert response.status_code == 404
+    assert response.json()["error"]["code"] == "NO_DEMO_BANK"

@@ -9,7 +9,7 @@ import pytest
 
 from app.connector import Bank
 from app.engine import timeline
-from app.engine.checkers import double_debit
+from app.engine.checkers import CHECKERS, check_all, double_debit
 from app.generator.contracts import PRODUCTS
 from app.generator.schedules import build_schedule, monthly_payment
 from app.generator.world import Settings, build_world
@@ -264,3 +264,46 @@ def test_the_checker_finds_every_planted_double_debit_and_nothing_else(world, ba
     assert len(planted) >= 50
     assert all(cleared.get(trap) == "ARREARS_COVERED" for trap in traps)
     assert {"ARREARS_COVERED", "RETRY_AFTER_FAILURE", "ALREADY_REVERSED"} <= set(cleared.values())
+
+
+# --- A4: all four checkers on the whole bank -------------------------------
+
+
+@pytest.fixture(scope="module")
+def checked(bank):
+    """Every finding and cleared item of the whole bank: {type: {(contract, installment): ...}}."""
+    found = {kind: {} for kind in CHECKERS}
+    cleared = {kind: {} for kind in CHECKERS}
+    for contract_id, data in bank.load().items():
+        result = check_all(timeline.build(data))
+        for finding in result.findings:
+            # For an early debit the answer key holds the money taken early.
+            found[finding.type][(contract_id, finding.installment_n)] = finding.amount_affected
+        for item in result.cleared:
+            cleared[item.type][(contract_id, item.installment_n)] = item.reason
+    return found, cleared
+
+
+@pytest.mark.parametrize(
+    "kind, trap_reason",
+    [
+        ("DOUBLE_DEBIT", "ARREARS_COVERED"),
+        ("EARLY_DEBIT", "EARLY_REPAYMENT_REQUESTED"),
+        ("LATE_POSTING", "PAID_AFTER_DUE_DATE"),
+        ("ILLEGAL_FEE", "FEE_IN_CONTRACT"),
+    ],
+)
+def test_each_checker_finds_every_planted_mistake_and_clears_every_trap(world, checked, kind, trap_reason):
+    found, cleared = checked
+    key = rows(
+        world / "truth.db",
+        f"SELECT contract_id, installment_n, excess_amount, is_trap FROM ground_truth WHERE defect_type = '{kind}'",
+    )
+    planted = {(contract_id, n): amount for contract_id, n, amount, is_trap in key if not is_trap}
+    traps = [(contract_id, n) for contract_id, n, _, is_trap in key if is_trap]
+
+    assert found[kind] == planted
+    assert len(planted) >= 50
+    assert len(traps) == 5
+    assert all(cleared[kind].get(trap) == trap_reason for trap in traps)
+    assert not any(trap in found[kind] for trap in traps)

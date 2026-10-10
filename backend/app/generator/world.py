@@ -21,7 +21,7 @@ from typing import Callable
 
 from .. import db
 from ..models import BANK_INDEXES, BANK_TABLES
-from . import defects
+from . import complaints, defects
 from .contracts import ALLOWED_FEES, PENALTY_BP_DAILY, PRODUCTS, make_contracts, render_contract
 from .customers import make_customers
 from .events import make_events
@@ -66,6 +66,9 @@ def build_world(parent: Path, world_id: str, settings: Settings,
     plan = defects.plan_defects(contracts, rates, settings.surprise, rng, as_of)
     events = make_events(contracts, plan, rng, as_of)
     traps = defects.pick_traps(events.lookalikes, settings.traps, rng)
+    complaint_rows, complaint_key = complaints.make_complaints(
+        contracts, events, traps, rng, as_of, settings.complaint_rate
+    )
     on_progress(60)
 
     schedule_rows = []
@@ -102,6 +105,7 @@ def build_world(parent: Path, world_id: str, settings: Settings,
         "debits": events.debits,
         "payments": events.payments,
         "charges": events.charges,
+        "complaints": complaint_rows,
     }
     on_progress(75)
 
@@ -132,6 +136,7 @@ def build_world(parent: Path, world_id: str, settings: Settings,
             "surprise": settings.surprise,
             "hidden": plan.hidden,
         },
+        complaint_key,
     )
     building.rename(target)
     on_progress(100)
@@ -140,6 +145,8 @@ def build_world(parent: Path, world_id: str, settings: Settings,
     for kind in defects.TYPES:
         counts[f"planted {kind}"] = sum(1 for row in events.planted if row[0] == kind)
         counts[f"trap {kind}"] = sum(1 for row in traps if row[0] == kind)
+    for kind in (complaints.VICTIM, complaints.TRAP, complaints.UNRELATED):
+        counts[f"complaints {kind}"] = sum(1 for row in complaint_key if row[1] == kind)
     return counts
 
 
@@ -154,7 +161,9 @@ _building: dict[str, dict] = {}  # world_id -> what GET /api/worlds/{id} shows w
 _one_build = threading.Lock()
 
 
-def start_build(settings: Settings, world_id: str | None = None) -> str:
+def start_build(settings: Settings, world_id: str | None = None,
+                on_ready: Callable[[str], None] | None = None) -> str:
+    """Builds in the background. `on_ready` is called with the world id once the build has succeeded."""
     if not _one_build.acquire(blocking=False):
         raise Busy
     try:
@@ -165,23 +174,28 @@ def start_build(settings: Settings, world_id: str | None = None) -> str:
             "world_id": world_id, "status": "building", "progress": 0, "size": settings.size,
             "seed": settings.seed, "as_of_date": settings.as_of_date.isoformat(),
         }
-        threading.Thread(target=_build, args=(parent, world_id, settings), daemon=True).start()
+        threading.Thread(target=_build, args=(parent, world_id, settings, on_ready), daemon=True).start()
     except BaseException:
         _one_build.release()
         raise
     return world_id
 
 
-def _build(parent: Path, world_id: str, settings: Settings) -> None:
+def _build(parent: Path, world_id: str, settings: Settings,
+           on_ready: Callable[[str], None] | None = None) -> None:
     state = _building[world_id]
+    built = False
     try:
         build_world(parent, world_id, settings, lambda percent: state.update(progress=percent))
         del _building[world_id]
+        built = True
     except Exception:
         log.exception("building world %s failed", world_id)
         state["status"] = "failed"
     finally:
         _one_build.release()
+    if built and on_ready:
+        on_ready(world_id)
 
 
 def _free_id(parent: Path, seed: int) -> str:

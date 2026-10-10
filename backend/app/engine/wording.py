@@ -9,6 +9,16 @@ MONTHS_LONG = (
     "July", "August", "September", "October", "November", "December",
 )
 COUNT_WORDS = ("No", "One", "Two", "Three", "Four", "Five")
+CHARGE_NAMES = {
+    "LATE_PAYMENT": "Late payment penalty",
+    "LOAN_ISSUANCE": "Loan issuance fee",
+    "CARD_REISSUE": "Card reissue fee",
+}
+
+
+def charge_name(code: str) -> str:
+    """The plain name of a penalty or fee. An unknown code is shown in plain words."""
+    return CHARGE_NAMES.get(code) or code.replace("_", " ").capitalize()
 
 
 def som(amount: int) -> str:
@@ -29,6 +39,16 @@ def month(value: date) -> str:
 def clock(value: datetime) -> str:
     """02:14, Tashkent time."""
     return f"{value.hour:02d}:{value.minute:02d}"
+
+
+def count_of(number: int, one: str) -> str:
+    """1 business day, 3 business days."""
+    return f"{number} {one}" if number == 1 else f"{number} {one}s"
+
+
+def days(number: int) -> str:
+    """1 day, 3 days."""
+    return count_of(number, "day")
 
 
 def count(number: int) -> str:

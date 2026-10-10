@@ -31,6 +31,7 @@ class Finding:
     days_early: int | None
     explanation: str
     evidence: Evidence
+    legal_basis: str | None = None  # a verified citation, "TO VERIFY", or None when no law is involved
 
 
 @dataclass(frozen=True, slots=True)
@@ -47,3 +48,23 @@ class Cleared:
 class CheckResult:
     findings: tuple[Finding, ...] = ()
     cleared: tuple[Cleared, ...] = ()
+
+
+from . import double_debit, early_debit, illegal_fee, late_posting  # noqa: E402  (they need the classes above)
+
+# The one implementation of each check, by mistake type.
+CHECKERS = {
+    double_debit.TYPE: double_debit.check,
+    early_debit.TYPE: early_debit.check,
+    late_posting.TYPE: late_posting.check,
+    illegal_fee.TYPE: illegal_fee.check,
+}
+
+
+def check_all(timeline) -> CheckResult:
+    """All 4 checks on one contract."""
+    results = [check(timeline) for check in CHECKERS.values()]
+    return CheckResult(
+        tuple(finding for result in results for finding in result.findings),
+        tuple(item for result in results for item in result.cleared),
+    )

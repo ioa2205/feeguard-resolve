@@ -77,7 +77,8 @@ CREATE TABLE IF NOT EXISTS cases (
 );
 CREATE TABLE IF NOT EXISTS decisions (
     id INTEGER PRIMARY KEY, case_id TEXT NOT NULL, action TEXT NOT NULL,
-    note TEXT NOT NULL, actor TEXT NOT NULL, at TEXT NOT NULL
+    note TEXT NOT NULL, actor TEXT NOT NULL, at TEXT NOT NULL,
+    corrected_verdict TEXT, corrected_excess INTEGER, audit_id TEXT NOT NULL
 );
 CREATE TABLE IF NOT EXISTS findings (
     id TEXT PRIMARY KEY, case_id TEXT, contract_id TEXT NOT NULL, type TEXT NOT NULL,

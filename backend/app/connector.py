@@ -101,6 +101,28 @@ class Contract:
     allowed_fees: tuple[str, ...]  # fee codes the contract lists
 
 
+@dataclass(frozen=True, slots=True)
+class Customer:
+    id: str
+    full_name: str
+    region: str
+    phone_masked: str
+    preferred_lang: str
+
+
+@dataclass(frozen=True, slots=True)
+class Complaint:
+    id: str
+    customer_id: str
+    customer_name: str
+    contract_id: str | None
+    text: str
+    lang: str
+    channel: str
+    created_at: datetime
+    source: str
+
+
 @dataclass(slots=True)
 class ContractData:
     """Everything the engine needs about one contract."""
@@ -161,6 +183,40 @@ class Bank:
             if match:
                 found.append((number, match.group(1)))
         return found
+
+    _CUSTOMER = "SELECT id, full_name, region, phone_masked, preferred_lang FROM customers"
+    _COMPLAINT = """SELECT m.id, m.customer_id, c.full_name, m.contract_id, m.text, m.lang, m.channel,
+                           m.created_at, m.source
+                    FROM complaints m JOIN customers c ON c.id = m.customer_id"""
+
+    def customer(self, customer_id: str) -> Customer | None:
+        row = self._db.execute(f"{self._CUSTOMER} WHERE id = ?", (customer_id,)).fetchone()
+        return Customer(*row) if row else None
+
+    def customers(self) -> dict[str, Customer]:
+        """Every customer of the bank, by id."""
+        return {row[0]: Customer(*row) for row in self._db.execute(self._CUSTOMER)}
+
+    def find_customers(self, search: str, limit: int) -> tuple[list[Customer], int]:
+        """Customers whose name or id contains `search`, in id order, and how many there are."""
+        escaped = search.strip().replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+        where = "WHERE full_name LIKE ? ESCAPE '\\' OR id LIKE ? ESCAPE '\\'"
+        args = (f"%{escaped}%", f"%{escaped}%")
+        (total,) = self._db.execute(f"SELECT count(*) FROM customers {where}", args).fetchone()
+        rows = self._db.execute(f"{self._CUSTOMER} {where} ORDER BY id LIMIT ?", (*args, limit))
+        return [Customer(*row) for row in rows], total
+
+    @staticmethod
+    def _complaint(row: tuple) -> Complaint:
+        return Complaint(*row[:7], datetime.fromisoformat(row[7]), row[8])
+
+    def complaint(self, complaint_id: str) -> Complaint | None:
+        row = self._db.execute(f"{self._COMPLAINT} WHERE m.id = ?", (complaint_id,)).fetchone()
+        return self._complaint(row) if row else None
+
+    def complaints(self) -> list[Complaint]:
+        """Every complaint, the oldest first."""
+        return [self._complaint(row) for row in self._db.execute(f"{self._COMPLAINT} ORDER BY m.created_at, m.id")]
 
     def load(self, contract_ids: Iterable[str] | None = None) -> dict[str, ContractData]:
         """Contracts with their schedule in force, debits, payments, charges and cards.
