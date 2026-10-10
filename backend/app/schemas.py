@@ -130,6 +130,30 @@ class WorldList(Shape):
     items: list[World]
 
 
+class PresetSource(Shape):
+    name: str
+    published: date
+    url: str
+
+
+class Preset(Shape):
+    """A mistake pattern from public news, rebuilt as a demo bank with fixed settings (task P1).
+    It names the pattern, never the bank in the news."""
+
+    preset_id: Id
+    world_id: Id  # the demo bank that one click builds or opens
+    title: str
+    what_happened: str
+    mistake: DefectType
+    seed: int
+    size: WorldSize
+    sources: list[PresetSource]
+
+
+class PresetList(Shape):
+    items: list[Preset]
+
+
 # --- Bank rows, as shown in evidence -------------------------------------
 
 

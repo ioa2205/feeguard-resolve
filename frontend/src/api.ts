@@ -21,6 +21,7 @@ import type {
   DraftReply,
   ErrorResponse,
   Health,
+  PresetList,
   QuarterlyReport,
   Reveal,
   ScanResult,
@@ -107,6 +108,10 @@ export const api = {
     call<WorldCreated>('POST', '/api/worlds', mocks.worldCreated, body),
   worlds: () => call<WorldList>('GET', '/api/worlds', mocks.worlds),
   world: (world: string) => call<World>('GET', `/api/worlds/${id(world)}`, mocks.world),
+  presets: () => call<PresetList>('GET', '/api/presets', mocks.presets),
+  /** Builds the preset's demo bank the first time; after that it opens at once. */
+  openPreset: (preset: string) =>
+    call<WorldCreated>('POST', `/api/presets/${id(preset)}`, { world_id: `preset-${preset}` }),
   tamper: (world: string, body: TamperRequest) =>
     call<TamperResult>('POST', `/api/worlds/${id(world)}/tamper`, mocks.tamperResult, body),
   customers: (search = '') =>

@@ -31,6 +31,12 @@ ADDED = {
     ("post", "/api/cases/{case_id}/improve-draft"),
 }
 
+# Added by DECISIONS D-033: the real-case presets (task P1).
+PRESETS = {
+    ("get", "/api/presets"),
+    ("post", "/api/presets/{preset_id}"),
+}
+
 
 def _published(client):
     paths = client.get("/api/openapi.json").json()["paths"]
@@ -38,7 +44,7 @@ def _published(client):
 
 
 def test_the_published_paths_are_exactly_the_frozen_list(client):
-    assert _published(client) == PART_10 | ADDED
+    assert _published(client) == PART_10 | ADDED | PRESETS
 
 
 def test_every_path_is_built_and_none_answers_501_any_more():

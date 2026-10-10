@@ -6,7 +6,7 @@ import { count, daysBetween, formatDate, formatTime } from '../format'
 import { useLoad } from '../hooks'
 import { useSession } from '../session'
 import type { Complaint, World } from '../types'
-import { LANG_ATTR, RECEIVED_BY, STATE, VERDICT, verified } from '../words'
+import { LANG_ATTR, MISTAKE, RECEIVED_BY, STATE, VERDICT, verified } from '../words'
 
 // The register of complaints (DESIGN section 7.4). The one that must be answered
 // first is on top, and only its action is the filled button.
@@ -24,9 +24,10 @@ function state(complaint: Complaint): string {
 }
 
 export default function Inbox() {
-  const { worldId, worlds } = useSession()
+  const { worldId, worlds, presets } = useSession()
   const { state: loaded, reload } = useLoad(() => api.complaints(), [worldId])
   const world = worlds?.find((item) => item.world_id === worldId)
+  const preset = presets.find((item) => item.world_id === worldId)
 
   return (
     <>
@@ -34,6 +35,12 @@ export default function Inbox() {
         title="Complaints"
         sentence="Complaints about loan payments. The one that must be answered first is on top."
       />
+      {preset && (
+        <p className="border-line bg-sheet rounded-sheet mb-4 max-w-[70ch] border p-3">
+          This demo bank rebuilds a public case: <strong>{preset.title}</strong>. {preset.what_happened} Check a
+          complaint about “{MISTAKE[preset.mistake].toLowerCase()}”, then press Find others.
+        </p>
+      )}
       {loaded.status === 'loading' && <Loading lines={6} />}
       {loaded.status === 'error' && <Problem error={loaded.error} onRetry={reload} />}
       {loaded.status === 'ready' && loaded.data.items.length === 0 && (

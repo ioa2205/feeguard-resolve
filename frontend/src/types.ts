@@ -93,6 +93,30 @@ export interface WorldList {
   items: World[]
 }
 
+export interface PresetSource {
+  name: string
+  published: Day
+  url: string
+}
+
+/** A mistake pattern from public news, rebuilt as a demo bank with fixed settings (task P1).
+ * It names the pattern, never the bank in the news. */
+export interface Preset {
+  preset_id: string
+  /** The demo bank that one click builds or opens. */
+  world_id: string
+  title: string
+  what_happened: string
+  mistake: DefectType
+  seed: number
+  size: WorldSize
+  sources: PresetSource[]
+}
+
+export interface PresetList {
+  items: Preset[]
+}
+
 // --- Bank rows, as shown in evidence ---
 
 export interface ScheduleRow {

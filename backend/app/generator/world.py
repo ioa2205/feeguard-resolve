@@ -30,6 +30,9 @@ BANK_DB = "bank.db"
 # How long the build took. Kept next to the bank, not in it: a time is no part of the world.
 BUILD_RECORD = "build.json"
 MAX_WORLDS = 10  # demo banks kept on disk; the oldest goes first, never the default one (PLAN Part 22)
+# The banks of the real-case presets (task P1). Like the default bank, they are never
+# deleted to make room, and nobody adds a debit to them by hand.
+PRESET_PREFIX = "preset-"
 DEFAULT_AS_OF = date(2026, 10, 10)
 DEFAULT_RATE = 0.02
 SIZES = (5000, 20000)
@@ -170,14 +173,19 @@ class Started:
     removed: list[str]  # old demo banks deleted to make room
 
 
+def is_kept_as_built(world_id: str) -> bool:
+    """The default bank and the preset banks stay as built, so every visitor sees the same numbers."""
+    return world_id == "default" or world_id.startswith(PRESET_PREFIX)
+
+
 def prune(parent: Path, keep: int) -> list[str]:
-    """Deletes the oldest demo banks until at most `keep` are left. Never the default one."""
+    """Deletes the oldest demo banks until at most `keep` are left. Never the default or a preset one."""
     def built_at(folder: Path) -> float:
         record = folder / BUILD_RECORD
         return (record if record.is_file() else folder / BANK_DB).stat().st_mtime
 
     banks = [p for p in parent.iterdir() if (p / BANK_DB).is_file()] if parent.is_dir() else []
-    removable = sorted((p for p in banks if p.name != "default"), key=built_at)
+    removable = sorted((p for p in banks if not is_kept_as_built(p.name)), key=built_at)
     removed = []
     while len(banks) - len(removed) > keep and removable:
         folder = removable.pop(0)
@@ -207,6 +215,12 @@ def start_build(settings: Settings, world_id: str | None = None,
         _one_build.release()
         raise
     return Started(world_id, removed)
+
+
+def forget_failed(world_id: str) -> None:
+    """A build that failed may be started again under the same id."""
+    if _building.get(world_id, {}).get("status") == "failed":
+        del _building[world_id]
 
 
 def record_build(folder: Path, seconds: float) -> None:

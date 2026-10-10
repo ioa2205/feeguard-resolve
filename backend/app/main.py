@@ -11,6 +11,7 @@ import threading
 import time
 from collections.abc import AsyncIterator, Iterator
 from contextlib import asynccontextmanager, contextmanager
+from collections.abc import Callable
 from typing import Annotated, NoReturn
 
 from fastapi import Depends, FastAPI, Header, Path, Query, Request, Response
@@ -27,6 +28,7 @@ from .engine.wording import charge_name
 from .errors import ApiError
 from .eval import scoreboard as scoring
 from .generator import complaints as sandbox_complaints
+from .generator import presets
 from .generator import tamper as sandbox_tamper
 from .generator import world
 from .reports import action_plan as plans
@@ -58,6 +60,7 @@ from .schemas import (
     Scoreboard,
     TamperRequest,
     TamperResult,
+    PresetList,
     World,
     WorldCreate,
     WorldCreated,
@@ -222,6 +225,16 @@ def health() -> Health:
 # --- Sandbox Bank: demo banks --------------------------------------------
 
 
+def _when_built(actor: str, chosen: dict) -> Callable[[str], None]:
+    """Writes the build to the new bank's audit log, then checks the bank once."""
+    def ready(world_id: str) -> None:
+        with _store(world_id) as store:
+            audit.append(store, actor, "DEMO_BANK_BUILT", {"world_id": world_id, **chosen})
+        _warm(world_id)
+
+    return ready
+
+
 @app.post("/api/worlds", response_model=WorldCreated)
 def create_world(body: WorldCreate, actor: ActingAs) -> WorldCreated:
     """Returns at once. The demo bank is built in the background, one at a time."""
@@ -229,15 +242,11 @@ def create_world(body: WorldCreate, actor: ActingAs) -> WorldCreated:
         seed=body.seed, size=body.size, defects=dict(body.defects),
         complaint_rate=body.complaint_rate, traps=body.traps, surprise=body.surprise,
     )
-    def ready(world_id: str) -> None:
-        with _store(world_id) as store:
-            # Only what the builder chose openly. The hidden settings stay in the answer key.
-            audit.append(store, actor, "DEMO_BANK_BUILT", {
-                "world_id": world_id, "seed": body.seed, "size": body.size, "surprise": body.surprise,
-                "mistakes": sorted(body.defects) if not body.surprise else "hidden", "traps": body.traps,
-            })
-        _warm(world_id)
-
+    # Only what the builder chose openly. The hidden settings stay in the answer key.
+    ready = _when_built(actor, {
+        "seed": body.seed, "size": body.size, "surprise": body.surprise,
+        "mistakes": sorted(body.defects) if not body.surprise else "hidden", "traps": body.traps,
+    })
     try:
         built = world.start_build(settings, on_ready=ready, keep=world.MAX_WORLDS)
     except world.Busy:
@@ -260,12 +269,54 @@ def get_world(world_id: WorldPath) -> World:
     return World(**found)
 
 
+@app.get("/api/presets", response_model=PresetList)
+def list_presets() -> PresetList:
+    return PresetList(items=[
+        schemas.Preset(
+            preset_id=preset.preset_id, world_id=preset.world_id, title=preset.title,
+            what_happened=preset.what_happened, mistake=preset.mistake,
+            seed=preset.settings.seed, size=preset.settings.size,
+            sources=[schemas.PresetSource(name=s.name, published=s.published, url=s.url) for s in preset.sources],
+        )
+        for preset in presets.PRESETS
+    ])
+
+
+@app.post("/api/presets/{preset_id}", response_model=WorldCreated)
+def open_preset(preset_id: WorldPath, actor: ActingAs) -> WorldCreated:
+    """Returns the preset's demo bank at once. It is built in the background the first time;
+    after that the same settings give the same bank, so it is opened as it is."""
+    preset = presets.by_id(preset_id)
+    if not preset:
+        raise ApiError(404, "NOT_FOUND", "There is no public case with this id.")
+    world.forget_failed(preset.world_id)
+    if world.get_world(preset.world_id):  # ready, or being built right now
+        return WorldCreated(world_id=preset.world_id)
+    settings = preset.settings
+    ready = _when_built(actor, {
+        "preset": preset.preset_id, "seed": settings.seed, "size": settings.size, "surprise": False,
+        "mistakes": sorted(settings.defects), "traps": settings.traps,
+    })
+    try:
+        built = world.start_build(settings, preset.world_id, on_ready=ready, keep=world.MAX_WORLDS)
+    except world.Busy:
+        if world.get_world(preset.world_id):  # the same case was clicked a moment ago
+            return WorldCreated(world_id=preset.world_id)
+        raise ApiError(429, "BUSY", "Another demo bank is being built. Try again in a moment.") from None
+    for gone in built.removed:
+        scanning.forget(gone)
+    return WorldCreated(world_id=built.world_id)
+
+
 @app.post("/api/worlds/{world_id}/tamper", response_model=TamperResult)
 def tamper(world_id: WorldPath, body: TamperRequest, actor: ActingAs) -> TamperResult:
     """Adds an extra debit to a loan by hand. The Sandbox Bank writes it; FeeGuard finds it on the next check."""
     if world_id == DEFAULT_WORLD_ID:
         raise ApiError(409, "DEFAULT_BANK", "The default demo bank stays as it was built, so every visitor sees "
                                             "the same numbers. Build your own demo bank and add the debit there.")
+    if world.is_kept_as_built(world_id):
+        raise ApiError(409, "PRESET_BANK", "A public-case demo bank stays as it was built, so it always shows the "
+                                           "public pattern alone. Build your own demo bank and add the debit there.")
     _bank(world_id).close()  # the demo bank must exist and be ready
     try:
         added = sandbox_tamper.add_debit(db.worlds_dir() / world_id, body.contract_id, body.card_id, body.amount)

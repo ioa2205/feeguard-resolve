@@ -29,6 +29,7 @@ MOCKS = {
     "draft-reply.json": schemas.DraftReply,
     "error.json": schemas.ErrorResponse,
     "health.json": schemas.Health,
+    "presets.json": schemas.PresetList,
     "quarterly.json": schemas.QuarterlyReport,
     "req-action-plan-update.json": schemas.ActionPlanUpdate,
     "req-complaint-create.json": schemas.ComplaintCreate,

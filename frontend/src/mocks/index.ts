@@ -21,6 +21,7 @@ import type {
   DraftReply,
   ErrorResponse,
   Health,
+  PresetList,
   QuarterlyReport,
   Reveal,
   ScanResult,
@@ -44,6 +45,7 @@ import decision from './decision.json'
 import draftReply from './draft-reply.json'
 import error from './error.json'
 import health from './health.json'
+import presets from './presets.json'
 import quarterly from './quarterly.json'
 import reqActionPlanUpdate from './req-action-plan-update.json'
 import reqComplaintCreate from './req-complaint-create.json'
@@ -90,6 +92,7 @@ export const mocks = {
   draftReply: typed<DraftReply>(draftReply),
   error: typed<ErrorResponse>(error),
   health: typed<Health>(health),
+  presets: typed<PresetList>(presets),
   quarterly: typed<QuarterlyReport>(quarterly),
   reqActionPlanUpdate: typed<ActionPlanUpdate>(reqActionPlanUpdate),
   reqComplaintCreate: typed<ComplaintCreate>(reqComplaintCreate),

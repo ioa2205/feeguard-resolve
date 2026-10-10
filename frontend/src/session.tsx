@@ -6,7 +6,8 @@ import type { ReactNode } from 'react'
 
 import { api, setActor as sendActor, setWorld as sendWorld } from './api'
 import { DEFAULT_WORLD_ID } from './types'
-import type { Actor, Health, World } from './types'
+import type { Actor, Health, Preset, World } from './types'
+import { MISTAKE } from './words'
 
 interface Session {
   actor: Actor
@@ -18,6 +19,10 @@ interface Session {
   /** Loads the list of demo banks again, after one was built. */
   refreshWorlds: () => Promise<void>
   health: Health | null
+  /** The real-case presets; empty while loading or when the server did not answer. */
+  presets: Preset[]
+  /** What a demo bank is called on screen. */
+  bankName: (worldId: string) => string
 }
 
 const SessionContext = createContext<Session | null>(null)
@@ -54,6 +59,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   })
   const [worlds, setWorlds] = useState<World[] | null>(null)
   const [health, setHealth] = useState<Health | null>(null)
+  const [presets, setPresets] = useState<Preset[]>([])
 
   const refreshWorlds = () =>
     api.worlds().then(
@@ -63,6 +69,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     api.health().then(setHealth, () => setHealth(null))
+    api.presets().then((list) => setPresets(list.items), () => setPresets([]))
     api.worlds().then(
       (list) => {
         setWorlds(list.items)
@@ -95,9 +102,15 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       worlds,
       refreshWorlds,
       health,
+      presets,
+      bankName: (id) => {
+        if (id === DEFAULT_WORLD_ID) return 'Default'
+        const preset = presets.find((item) => item.world_id === id)
+        return preset ? `Public case: ${MISTAKE[preset.mistake].toLowerCase()}` : id
+      },
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [actor, worldId, worlds, health],
+    [actor, worldId, worlds, health, presets],
   )
 
   return <SessionContext.Provider value={session}>{children}</SessionContext.Provider>

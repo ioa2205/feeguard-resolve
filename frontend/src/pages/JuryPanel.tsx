@@ -5,27 +5,23 @@ import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-do
 import { api } from '../api'
 import { CustomerPicker } from '../components/CustomerPicker'
 import { Button, Label, Loading, PageHead, Problem } from '../components/Parts'
-import { count, formatDateTime, formatNumber, formatSom } from '../format'
+import { count, formatDate, formatDateTime, formatNumber, formatSom } from '../format'
 import { useLoad } from '../hooks'
 import { useSession } from '../session'
-import type { Customer, DefectType, Reveal, TamperResult, World, WorldSize } from '../types'
+import type { Customer, DefectType, Preset, Reveal, TamperResult, World, WorldSize } from '../types'
 import { DEFAULT_WORLD_ID } from '../types'
 import { MISTAKE } from '../words'
 
 // Build a demo bank (DESIGN section 7.4): a form on one sheet. Main action: "Build the
-// demo bank". Below it two smaller actions: "Add a debit by hand" and "Show the answer
-// key". This is the Sandbox Bank; FeeGuard never sees the answer key.
+// demo bank". Below it smaller actions: "Load this public case", "Add a debit by hand"
+// and "Show the answer key". This is the Sandbox Bank; FeeGuard never sees the answer key.
 
 const TYPES: DefectType[] = ['DOUBLE_DEBIT', 'EARLY_DEBIT', 'LATE_POSTING', 'ILLEGAL_FEE']
 const SHEET = 'border-line bg-sheet rounded-sheet border p-4 md:p-6'
 const FIELD = 'rounded-field border-ink-soft bg-sheet min-h-10 border px-2'
 
-function bankName(id: string): string {
-  return id === DEFAULT_WORLD_ID ? 'Default' : id
-}
-
 function Build() {
-  const { refreshWorlds, setWorldId, worldId: openBank } = useSession()
+  const { refreshWorlds, setWorldId, worldId: openBank, bankName } = useSession()
   const navigate = useNavigate()
   // The screen starts again when the new bank opens, so "ready" travels in the address.
   const [params] = useSearchParams()
@@ -182,8 +178,90 @@ function Build() {
   )
 }
 
+// Two mistakes from public news, each rebuilt as a demo bank with fixed settings (task P1).
+// One click loads it: built the first time, opened at once after that.
+function PublicCases() {
+  const { presets, refreshWorlds, setWorldId, worldId: openBank } = useSession()
+  const navigate = useNavigate()
+  const [params] = useSearchParams()
+  const opened = presets.find((preset) => preset.preset_id === params.get('case') && preset.world_id === openBank)
+  const [loading, setLoading] = useState<{ preset: Preset; progress: number } | null>(null)
+  const [error, setError] = useState<Error | null>(null)
+  const alive = useRef(true)
+  useEffect(() => {
+    alive.current = true
+    return () => { alive.current = false }
+  }, [])
+
+  async function load(preset: Preset) {
+    setError(null)
+    setLoading({ preset, progress: 0 })
+    try {
+      const { world_id: worldId } = await api.openPreset(preset.preset_id)
+      for (;;) {
+        const world = await api.world(worldId)
+        if (!alive.current) return
+        if (world.status === 'ready') break
+        if (world.status === 'failed') throw new Error('Building the demo bank failed on the server. Try again.')
+        setLoading({ preset, progress: world.progress })
+        await new Promise((done) => window.setTimeout(done, 1000))
+      }
+      await refreshWorlds()
+      navigate(`/sandbox/build?case=${encodeURIComponent(preset.preset_id)}`)
+      setWorldId(worldId)
+    } catch (failure) {
+      if (!alive.current) return
+      setLoading(null)
+      setError(failure as Error)
+    }
+  }
+
+  if (presets.length === 0) return null
+  return (
+    <section className={`${SHEET} max-w-[70ch] space-y-4`}>
+      <h2 className="font-condensed text-stamp-text font-semibold">Public cases</h2>
+      <p>
+        In October 2025 the Central Bank fined banks for these two mistakes. Each is rebuilt here as a demo bank with
+        invented customers. Load one, check one complaint about it, then press Find others: FeeGuard should find the
+        whole group.
+      </p>
+      {presets.map((preset) => (
+        <div key={preset.preset_id} className="border-line space-y-2 border-t pt-3">
+          <h3 className="font-semibold">{preset.title}</h3>
+          <p>{preset.what_happened}</p>
+          <p className="text-small">
+            Only this mistake is hidden, in {formatNumber(preset.size)} loans, seed {preset.seed}. Source:{' '}
+            {preset.sources.map((source, index) => (
+              <span key={source.url}>
+                {index > 0 && ' · '}
+                <a href={source.url} target="_blank" rel="noreferrer" className="text-stamp underline">
+                  {source.name}, {formatDate(source.published)}
+                </a>
+              </span>
+            ))}
+          </p>
+          <Button disabled={Boolean(loading)} onClick={() => load(preset)}>
+            {loading?.preset === preset ? `Loading… ${loading.progress}%` : 'Load this public case'}
+          </Button>
+          {opened === preset && (
+            <p role="status" className="border-stamp rounded-sheet border-2 p-3">
+              This public case is now the open demo bank. Open the{' '}
+              <Link to="/" className="text-stamp underline">Complaints</Link> screen, check a complaint about “
+              {MISTAKE[preset.mistake].toLowerCase()}”, then press Find others.
+            </p>
+          )}
+        </div>
+      ))}
+      {error && <Problem error={error} />}
+      <p className="text-small text-ink-soft">
+        Rebuilt from public news. We do not claim to know those banks’ internal causes.
+      </p>
+    </section>
+  )
+}
+
 function AddDebit() {
-  const { worldId } = useSession()
+  const { worldId, presets } = useSession()
   const ids = { loan: useId(), card: useId(), amount: useId() }
   const [customer, setCustomer] = useState<Customer | null>(null)
   const statement = useLoad(() => (customer ? api.statement(customer.customer_id) : Promise.resolve(null)), [customer?.customer_id])
@@ -224,6 +302,11 @@ function AddDebit() {
       {worldId === DEFAULT_WORLD_ID ? (
         <p>
           The default demo bank stays as it was built, so every visitor sees the same numbers. Build your own demo bank
+          above; a debit can be added there.
+        </p>
+      ) : presets.some((preset) => preset.world_id === worldId) ? (
+        <p>
+          A public-case demo bank stays as it was built, so it shows the public mistake alone. Build your own demo bank
           above; a debit can be added there.
         </p>
       ) : (
@@ -293,7 +376,7 @@ function settingLines(settings: Record<string, unknown>): string[] {
 }
 
 function AnswerKey() {
-  const { worldId } = useSession()
+  const { worldId, bankName } = useSession()
   const { hash } = useLocation()
   const section = useRef<HTMLElement>(null)
   const [key, setKey] = useState<Reveal | null>(null)
@@ -398,9 +481,13 @@ export default function JuryPanel() {
   const { worldId } = useSession()
   return (
     <>
-      <PageHead title="Build a demo bank" sentence="Create a new fake bank, add a debit by hand, or open the answer key." />
+      <PageHead
+        title="Build a demo bank"
+        sentence="Create a new fake bank, load a public case, add a debit by hand, or open the answer key."
+      />
       <div className="space-y-6">
         <Build />
+        <PublicCases />
         <div key={worldId} className="space-y-6">
           <AddDebit />
           <AnswerKey />

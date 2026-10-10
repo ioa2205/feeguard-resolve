@@ -1,0 +1,46 @@
+{
+  "items": [
+    {
+      "preset_id": "issuance-fee",
+      "world_id": "preset-issuance-fee",
+      "title": "Issuance fee not allowed (public case, Oct 2025)",
+      "what_happened": "After a tariff update, one loan product charged a one-time fee for issuing the loan. The loan contract does not list this fee.",
+      "mistake": "ILLEGAL_FEE",
+      "seed": 2025,
+      "size": 5000,
+      "sources": [
+        {
+          "name": "Kun.uz",
+          "published": "2025-10-03",
+          "url": "https://kun.uz/news/2025/10/03/markaziy-bank-3-ta-tijorat-bankini-istemolchilar-huquqlarini-buzgani-uchun-jarimaga-tortdi"
+        },
+        {
+          "name": "Spot",
+          "published": "2025-10-03",
+          "url": "https://www.spot.uz/oz/2025/10/03/three-bank/"
+        }
+      ]
+    },
+    {
+      "preset_id": "late-posting",
+      "world_id": "preset-late-posting",
+      "title": "Recorded late, then fined (public case, Oct 2025)",
+      "what_happened": "Customers paid on the due date through one payment channel. The bank recorded the payment on the next business day and charged a late-payment penalty.",
+      "mistake": "LATE_POSTING",
+      "seed": 2025,
+      "size": 5000,
+      "sources": [
+        {
+          "name": "Kun.uz",
+          "published": "2025-10-03",
+          "url": "https://kun.uz/news/2025/10/03/markaziy-bank-3-ta-tijorat-bankini-istemolchilar-huquqlarini-buzgani-uchun-jarimaga-tortdi"
+        },
+        {
+          "name": "Spot",
+          "published": "2025-10-03",
+          "url": "https://www.spot.uz/oz/2025/10/03/three-bank/"
+        }
+      ]
+    }
+  ]
+}

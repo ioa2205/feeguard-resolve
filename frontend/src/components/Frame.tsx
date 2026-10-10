@@ -38,13 +38,9 @@ const ZONES = [
 const ACTORS: Actor[] = ['officer', 'compliance', 'jury']
 const CHOSEN = 'font-semibold underline underline-offset-4'
 
-function bankName(worldId: string): string {
-  return worldId === 'default' ? 'Default' : worldId
-}
-
 export function Frame() {
   const { pathname } = useLocation()
-  const { actor, setActor, worldId, setWorldId, worlds, health } = useSession()
+  const { actor, setActor, worldId, setWorldId, worlds, health, bankName } = useSession()
   const zone = pathname.startsWith('/sandbox') ? ZONES[1] : ZONES[0]
   const world = worlds?.find((item) => item.world_id === worldId)
 
