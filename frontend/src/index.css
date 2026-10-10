@@ -64,3 +64,28 @@ body {
   outline: 2px solid var(--stamp);
   outline-offset: 2px;
 }
+
+/* On a dark or marigold band the ring takes the colour of the band's text. */
+header :focus-visible {
+  outline-color: currentColor;
+}
+
+/* The only motion in the product: the stamp lands when a person decides (DESIGN section 11). */
+@keyframes stamp-lands {
+  from {
+    transform: scale(1.06);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+.stamp-lands {
+  animation: stamp-lands 120ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stamp-lands {
+    animation: none;
+  }
+}
