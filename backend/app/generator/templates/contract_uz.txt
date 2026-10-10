@@ -1,0 +1,36 @@
+«{product_name}» KREDIT SHARTNOMASI № {contract_id}
+
+{branch}                                                    {start_date}
+
+«Sandbox Bank» aksiyadorlik tijorat banki (keyingi oʻrinlarda — Bank) bir tomondan va fuqaro {full_name} (keyingi oʻrinlarda — Qarz oluvchi) ikkinchi tomondan ushbu shartnomani quyidagilar haqida tuzdilar.
+
+1. SHARTNOMA PREDMETI
+1.1. Bank Qarz oluvchiga ushbu shartnoma shartlari asosida kredit beradi, Qarz oluvchi esa kreditni va unga hisoblangan foizlarni belgilangan muddatlarda qaytarish majburiyatini oladi.
+
+2. KREDIT SHARTLARI
+2.1. Kredit miqdori — {principal} soʻm.
+2.2. Kredit muddati — {term_months} oy.
+2.3. Foiz stavkasi — yillik {annual_rate} foiz.
+2.4. Oylik toʻlov miqdori — {monthly_payment} soʻm. Toʻlov jadvali ushbu shartnomaning ajralmas qismi hisoblanadi.
+
+3. VOSITACHILIK HAQLARI VA BOSHQA TOʻLOVLAR
+3.1. Ushbu shartnoma boʻyicha Qarz oluvchidan faqat quyidagi toʻlovlar undiriladi: {fees}.
+3.2. Bank ushbu shartnomada koʻrsatilmagan vositachilik haqi yoki boshqa toʻlovlarni undirishga haqli emas.
+
+4. KREDITNI QAYTARISH TARTIBI
+4.1. Qarz oluvchi oylik toʻlovni toʻlov jadvaliga muvofiq har oyning {due_day}-sanasida toʻlaydi.
+4.2. Bank toʻlov kunida toʻlov jadvalida koʻrsatilgan summani Qarz oluvchining bank kartasidan akseptsiz tartibda yechib oladi. Har bir oylik toʻlov faqat bir marta yechib olinadi.
+4.3. Agar navbatdagi toʻlov oʻz vaqtida toʻlanmasa, Bank muddati oʻtgan summani keyingi yechib olishda undiradi.
+4.4. Bank toʻlovni toʻlov jadvalida belgilangan sanadan oldin yechib olishga haqli emas. Qarz oluvchining kreditni muddatidan oldin qaytarish toʻgʻrisidagi arizasi bundan mustasno.
+4.5. Toʻlov bank kassasi, mobil ilova yoki toʻlov tizimlari orqali amalga oshirilganda, pul toʻlangan kun toʻlov sanasi hisoblanadi.
+4.6. Toʻlov jadvali oʻzgartirilganda Bank Qarz oluvchiga yangi jadvalni beradi va shu kundan boshlab toʻlovlarni faqat yangi jadval boʻyicha undiradi.
+
+5. TOMONLARNING JAVOBGARLIGI
+5.1. Oylik toʻlov kechiktirilgan har bir kun uchun Qarz oluvchi muddati oʻtgan summaning {penalty_rate} foizi miqdorida penya toʻlaydi.
+5.2. Toʻlov oʻz vaqtida amalga oshirilgan boʻlsa, penya hisoblanmaydi.
+
+6. YAKUNIY QOIDALAR
+6.1. Ushbu shartnoma imzolangan kundan boshlab kuchga kiradi va tomonlar oʻz majburiyatlarini toʻliq bajargunga qadar amal qiladi.
+6.2. Shartnoma teng yuridik kuchga ega boʻlgan ikki nusxada tuzildi.
+
+NAMUNA — ushbu hujjat sunʼiy maʼlumotlar asosida yaratilgan.

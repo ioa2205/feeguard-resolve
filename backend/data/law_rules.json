@@ -1,0 +1,20 @@
+{
+  "_note": "Legal facts that FeeGuard uses. A basis of \"TO VERIFY\" means nobody has checked the source yet (docs/DECISIONS.md, task M0.5). An entry is used in a decision only when \"verified\" is true. Never fill one in from memory.",
+  "fees_not_allowed": [
+    {
+      "code": "LOAN_ISSUANCE",
+      "name": "One-time loan issuance fee",
+      "verified": false,
+      "legal_basis": "TO VERIFY"
+    }
+  ],
+  "complaint_answer": {
+    "days": null,
+    "verified": false,
+    "legal_basis": "TO VERIFY"
+  },
+  "annex5_columns": {
+    "verified": false,
+    "legal_basis": "TO VERIFY"
+  }
+}
