@@ -1,6 +1,6 @@
 # FeeGuard Resolve — Measured results
 
-Proof 1 and the cause finder are measured (11 Oct 2026). Proofs 3 and 5 and the VPS speed are not.
+Proof 1, proof 4 and the cause finder are measured (11 Oct 2026). Proofs 3 and 5 and the VPS speed are not.
 
 ## Rules for this file
 
@@ -49,6 +49,17 @@ By language:
 | Uzbek, Cyrillic | | | |
 | Russian | | | |
 | Mixed | | | |
+
+## Proof 4 — Catches real-world cases (task P1)
+
+Measured 11 Oct 2026, between 02:26 and 02:31 Tashkent, on the code of commit `ec29cdf`, on this laptop · `python scripts/browser/preset_walk.py` (output in `evidence/p1-preset-walk.txt`), then the scan and `GET /api/eval/{bank}` of each preset bank · Each preset bank: seed 2025, 5,000 loans, only that mistake planted on 2% of loans, 20 look-alike complaints, 15% of wronged customers complain. Rebuilt from public news (Kun.uz and Spot, 3 Oct 2025); the customers are invented.
+
+| Public case | One click to an open bank | One complaint | Find others | To return | Top cause found | Planted / found / false alarms | Look-alikes flagged |
+|---|---|---|---|---|---|---|---|
+| Issuance fee not allowed (Oct 2025) | 3.9 s first click (build), 0.3 s after | C-0015: Customer is right | 102 customers, **86 never complained** | 11 740 000 soʻm | tariff version 2: 100% of the cases, 49 times normal | 102 / 102 / 0 | 0 of 20 |
+| Recorded late, then fined (Oct 2025) | 2.5 s first click (build) | C-0011: Customer is right | 100 customers, **83 never complained** | 426 350 soʻm | channel PAYNET: 100%, 6.6 times normal | 112 / 112 / 0 (installments) | 0 of 20 |
+
+Soʻm found equals soʻm planted for both. The scan itself answered in 40 ms and 35 ms (server time). The complaint was chosen by the test harness from the answer key. Find others checks every loan of the bank for that mistake, so its result does not depend on which complaint started it.
 
 ## Proof 5 — Saves time (task P2)
 
