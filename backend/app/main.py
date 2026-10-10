@@ -15,6 +15,7 @@ from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from . import db
+from .ai import llm
 from .errors import ApiError
 from .generator import world
 from .schemas import (
@@ -120,12 +121,9 @@ def _not_built(task: str) -> NoReturn:
 
 @app.get("/api/health", response_model=Health)
 def health() -> Health:
-    # The local model is wired in task B3. Until then complaints are read by rules.
-    return Health(
-        db="ok" if db.storage_ready() else "error",
-        llm_mode="rules",
-        model_name=None,
-    )
+    # "rules" whenever no local model is set up or it does not answer. Never hidden.
+    llm_mode, model_name = llm.status()
+    return Health(db="ok" if db.storage_ready() else "error", llm_mode=llm_mode, model_name=model_name)
 
 
 # --- Sandbox Bank: demo banks --------------------------------------------
