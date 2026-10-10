@@ -1,4 +1,4 @@
-"""Rules of CLAUDE.md that a test can hold: 3, 4, 11 and 15."""
+"""Rules of CLAUDE.md that a test can hold: 6, 7, 9 and 10, and the start-up check of PLAN Part 8."""
 
 import re
 from pathlib import Path
@@ -49,3 +49,21 @@ def test_no_ai_sdk_in_the_dependencies():
     names = {line.split("==")[0].split("[")[0].strip() for line in lines if line.strip()}
 
     assert names.isdisjoint(AI_SDKS)
+
+
+def test_the_app_refuses_to_start_with_a_model_address_outside(monkeypatch, tmp_path):
+    import pytest
+    from fastapi.testclient import TestClient
+
+    from app.main import app
+
+    monkeypatch.setenv("WORLDS_DIR", str(tmp_path))
+    monkeypatch.setenv("DEFAULT_WORLD_SIZE", "0")  # no demo bank is built at start
+    monkeypatch.setenv("LLM_URL", "https://api.openai.com/v1")
+    with pytest.raises(RuntimeError, match="LLM_URL"):
+        with TestClient(app):
+            pass
+
+    monkeypatch.setenv("LLM_URL", "http://ollama:11434")
+    with TestClient(app) as client:
+        assert client.get("/api/health").status_code == 200

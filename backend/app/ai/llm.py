@@ -43,6 +43,16 @@ def is_local(url: str) -> bool:
     return address.is_loopback or address.is_private
 
 
+def check_address() -> None:
+    """Start-up check (PLAN Part 8): an LLM_URL that is not local stops the app."""
+    url = os.environ.get("LLM_URL", "").strip()
+    if url and not is_local(url):
+        raise RuntimeError(
+            "LLM_URL must point to a model on this machine or the internal Docker network. "
+            "FeeGuard never sends complaint text to an outside AI service."
+        )
+
+
 def settings() -> tuple[str, str] | None:
     """The model address and name, or None when no local model is set up."""
     url = os.environ.get("LLM_URL", "").rstrip("/")
@@ -52,8 +62,8 @@ def settings() -> tuple[str, str] | None:
     return url, model
 
 
-def ask_json(system: str, user: str, schema: dict, time_left: float) -> dict:
-    """One question, one answer in the given JSON form."""
+def ask_json(system: str, user: str, schema: dict, time_left: float, max_tokens: int = 150) -> dict:
+    """One question, one answer in the given JSON form, at most `max_tokens` long."""
     found = settings()
     if not found or time_left <= 0:
         raise LlmUnavailable
@@ -63,7 +73,7 @@ def ask_json(system: str, user: str, schema: dict, time_left: float) -> dict:
         "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}],
         "stream": False,
         "format": schema,
-        "options": {"temperature": 0, "num_predict": 150},
+        "options": {"temperature": 0, "num_predict": max_tokens},
         "keep_alive": "30m",
     }
     try:

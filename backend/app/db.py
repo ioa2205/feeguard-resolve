@@ -74,6 +74,13 @@ def load_case(store: sqlite3.Connection, case_id: str) -> dict | None:
     return json.loads(row[0]) if row else None
 
 
+def save_draft(store: sqlite3.Connection, case_id: str, draft: dict) -> None:
+    """Keeps the letter now on screen with the stored case."""
+    stored = load_case(store, case_id)
+    stored["draft_reply"] = draft
+    store.execute("UPDATE cases SET evidence_json = ? WHERE id = ?", (json.dumps(stored, ensure_ascii=False), case_id))
+
+
 def save_decision(store: sqlite3.Connection, decision: dict) -> None:
     store.execute(
         "INSERT INTO decisions (case_id, action, note, actor, at, corrected_verdict, corrected_excess, audit_id) "

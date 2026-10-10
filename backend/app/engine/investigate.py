@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from datetime import date, timedelta
 
 from .. import schemas
-from ..ai import parse_complaint
+from ..ai import drafts, parse_complaint
 from ..connector import Bank, Charge, Complaint, Debit, Payment
 from . import timeline as timelines
 from .checkers import CheckResult, Cleared, Evidence, Finding, check_all
@@ -282,7 +282,7 @@ def investigate(bank: Bank, complaint: Complaint) -> schemas.CaseResult:
 
     cards = {timeline.data.contract.id: timeline.data.cards for timeline in built}
     finding_ids = {id(f): finding_id(complaint.id, number) for number, f in enumerate(outcome.findings, start=1)}
-    return schemas.CaseResult(
+    result = schemas.CaseResult(
         case_id=complaint.id,
         complaint=schemas.Complaint(
             complaint_id=complaint.id, customer_id=complaint.customer_id, customer_name=complaint.customer_name,
@@ -318,8 +318,10 @@ def investigate(bank: Bank, complaint: Complaint) -> schemas.CaseResult:
         total_excess=sum(f.amount_excess for f in outcome.findings),
         total_affected=sum(f.amount_affected for f in outcome.findings),
         timelines=[shape for shape in (_timeline(timeline, outcome, finding_ids) for timeline in built) if shape],
-        draft_reply=None,  # task B6 writes the letter
+        draft_reply=None,
         decision=None,
         audit_id="-",
         elapsed_ms=0,
     )
+    # The template letter comes with the verdict; the local model may reword it later (DECISIONS D-010).
+    return result.model_copy(update={"draft_reply": drafts.reply(result)})

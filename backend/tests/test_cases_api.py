@@ -104,7 +104,7 @@ def test_a_generated_complaint_of_a_wronged_customer_is_supported_with_proof(cli
     if claim_type != "ILLEGAL_FEE":
         assert any(event.wrong for event in marked[0].events)
     assert result.audit_id.startswith("A-")
-    assert result.draft_reply is None  # the letter is task B6
+    assert result.draft_reply.source == "template" and result.complaint.complaint_id in result.draft_reply.text  # B6
 
 
 def test_a_trap_complaint_ends_as_bank_was_right_with_the_reason(client, world):

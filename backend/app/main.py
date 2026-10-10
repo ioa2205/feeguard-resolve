@@ -1,7 +1,7 @@
 """FeeGuard API: JSON and CSV only. It never serves a page (PLAN Part 12).
 
-Task M0.2 froze every path of PLAN Part 10 here. A path that is not built yet
-answers 501 and names the task that builds it.
+Task M0.2 froze every path of PLAN Part 10 here. Every path is built since
+task B6; the "not built" answer of DECISIONS D-015 is gone.
 """
 
 import logging
@@ -19,7 +19,7 @@ from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from . import audit, db, schemas
-from .ai import classifier, llm, parse_complaint
+from .ai import classifier, drafts, llm, parse_complaint
 from .connector import Bank
 from .engine import investigate as investigation
 from .engine import scan as scanning
@@ -84,6 +84,7 @@ def _warm(world_id: str) -> None:
 
 @asynccontextmanager
 async def _lifespan(_: FastAPI) -> AsyncIterator[None]:
+    llm.check_address()  # an outside model address stops the start
     # The default demo bank is built once, in the background, when it is missing.
     # DEFAULT_WORLD_SIZE=5000 gives a smaller one on a small machine; 0 builds none.
     size = int(os.environ.get("DEFAULT_WORLD_SIZE", "20000"))
@@ -146,10 +147,6 @@ def _actor(x_actor: Annotated[Actor, Header()] = "officer") -> Actor:
 
 WorldId = Annotated[str, Depends(_world)]
 ActingAs = Annotated[Actor, Depends(_actor)]
-
-
-def _not_built(task: str) -> NoReturn:
-    raise ApiError(501, "NOT_BUILT", f"Not built yet. Task {task} builds it.")
 
 
 def _no_demo_bank(world_id: str) -> NoReturn:
@@ -426,7 +423,18 @@ def decide(case_id: str, body: DecisionRequest, world: WorldId, actor: ActingAs)
 
 @app.post("/api/cases/{case_id}/improve-draft", response_model=DraftReply)
 def improve_draft(case_id: str, world: WorldId, actor: ActingAs) -> DraftReply:
-    _not_built("B6")
+    """Asks the local model to reword the letter. Code checks the numbers and the language;
+    without a model, or when the check fails, the template letter stays."""
+    with _store(world) as store:
+        stored = db.load_case(store, case_id)
+    if not stored:
+        raise ApiError(404, "NOT_FOUND", "This complaint has not been checked yet.")
+    template = drafts.reply(CaseResult.model_validate({**stored, "decision": None}))
+    letter = drafts.improve(template)
+    with _store(world) as store:
+        db.save_draft(store, case_id, letter.model_dump(mode="json"))
+        audit.append(store, actor, "LETTER_REWORDING_ASKED", {"case_id": case_id, "kept": letter.source})
+    return letter
 
 
 @app.post("/api/findings/{finding_id}/scan", response_model=ScanResult)

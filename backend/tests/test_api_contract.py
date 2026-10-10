@@ -1,5 +1,7 @@
 """The frozen list of paths. A new path needs an entry here and in docs/DECISIONS.md."""
 
+from pathlib import Path
+
 # PLAN Part 10.
 PART_10 = {
     ("post", "/api/worlds"),
@@ -39,12 +41,10 @@ def test_the_published_paths_are_exactly_the_frozen_list(client):
     assert _published(client) == PART_10 | ADDED
 
 
-def test_a_path_that_is_not_built_answers_501_in_the_error_shape(client):
-    response = client.post("/api/cases/C-0001/improve-draft")
+def test_every_path_is_built_and_none_answers_501_any_more():
+    source = (Path(__file__).resolve().parents[1] / "app" / "main.py").read_text(encoding="utf-8")
 
-    assert response.status_code == 501
-    assert response.json()["error"]["code"] == "NOT_BUILT"
-    assert "B6" in response.json()["error"]["message"]
+    assert "NOT_BUILT" not in source and "501" not in source
 
 
 def test_an_unknown_path_answers_404_in_the_error_shape(client):
