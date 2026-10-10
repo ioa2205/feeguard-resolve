@@ -1,7 +1,8 @@
-"""Compares FeeGuard's results with the answer key (PLAN Part 11). Task A9.
+"""Compares FeeGuard's results with the answer key (PLAN Part 11). Tasks A5, A6 and A9.
 
-Built so far (tasks A5 and A6): the verdict on every generated complaint, next
-to the verdict the Sandbox Bank expects. The detection scoreboard is task A9.
+Prints two tables: what the four checks found over the whole bank next to the
+planted mistakes (the Scoreboard), and the verdict on every generated complaint
+next to the verdict the Sandbox Bank expects.
 
     python -m app.eval.run_eval --world default
 
@@ -10,6 +11,7 @@ Only this folder and the Reveal endpoint may open truth.db.
 
 import argparse
 import sqlite3
+import sys
 import statistics
 import time
 from collections import Counter
@@ -17,7 +19,9 @@ from pathlib import Path
 
 from .. import db
 from ..connector import Bank
-from ..engine import investigate
+from ..engine import investigate, scan
+from ..engine.wording import som
+from .scoreboard import answer_key, score
 
 TRUTH_DB = "truth.db"
 
@@ -69,8 +73,19 @@ def main() -> None:
     parser.add_argument("--world", default="default")
     parser.add_argument("--show-wrong", type=int, default=10, help="how many wrong verdicts to list")
     args = parser.parse_args()
+    sys.stdout.reconfigure(encoding="utf-8")  # soʻm on a Windows console
 
-    result = complaint_verdicts(db.worlds_dir() / args.world)
+    world_dir = db.worlds_dir() / args.world
+    with Bank(world_dir) as bank:
+        found = scan.check_bank(bank)
+    print(f"Mistakes over the whole demo bank {args.world} ({len(found.owner_of):,} loans, checked in {found.seconds:.1f} s)")
+    print(f"  {'type':<14} {'planted':>8} {'found':>7} {'missed':>7} {'false':>7} {'traps':>7}   soʻm planted / found")
+    for row in score(answer_key(world_dir), found):
+        print(f"  {row.type:<14} {row.planted:>8} {row.found:>7} {row.missed:>7} {row.false_alarms:>7} "
+              f"{row.traps_flagged:>3} of {row.traps_planted:<3} {som(row.amount_planted)} / {som(row.amount_found)}")
+    print("  (traps: look-alikes of the answer key that were flagged; early debit soʻm is money taken early)")
+
+    result = complaint_verdicts(world_dir)
     names = {"VICTIM": "really wronged", "TRAP": "look-alike (bank was right)", "OTHER": "not about a payment"}
     print(f"Verdicts on the generated complaints of demo bank {args.world}")
     for kind, name in names.items():

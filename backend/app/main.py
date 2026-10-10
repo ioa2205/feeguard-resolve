@@ -25,6 +25,7 @@ from .engine import investigate as investigation
 from .engine import scan as scanning
 from .engine.wording import charge_name
 from .errors import ApiError
+from .eval import scoreboard as scoring
 from .generator import complaints as sandbox_complaints
 from .generator import world
 from .reports import action_plan as plans
@@ -413,12 +414,13 @@ def scan(finding_id: str, world: WorldId, actor: ActingAs) -> ScanResult:
         raise ApiError(404, "NOT_FOUND", "There is no finding with this id.")
     with _bank(world) as bank:
         result = scanning.scan(finding_type, scanning.findings_of(world, bank), bank)
+    elapsed_ms = round((time.perf_counter() - started) * 1000)
     with _store(world) as store:
         audit.append(store, actor, "OTHERS_SEARCHED", {
             "finding_id": finding_id, "finding_type": finding_type, "customers": result.affected_customers,
-            "never_complained": result.silent, "to_return": result.total_excess,
+            "never_complained": result.silent, "to_return": result.total_excess, "elapsed_ms": elapsed_ms,
         })
-    return result.model_copy(update={"elapsed_ms": round((time.perf_counter() - started) * 1000)})
+    return result.model_copy(update={"elapsed_ms": elapsed_ms})
 
 
 # --- FeeGuard: reports and audit -----------------------------------------
@@ -494,9 +496,20 @@ def audit_log(
 
 @app.get("/api/eval/{world_id}", response_model=Scoreboard)
 def scoreboard(world_id: WorldPath) -> Scoreboard:
-    _not_built("A9")
+    """FeeGuard's findings over the whole demo bank next to the answer key."""
+    started = time.perf_counter()
+    with _bank(world_id) as bank, _store(world_id) as store:
+        found = scanning.findings_of(world_id, bank)
+        result = scoring.scoreboard(
+            world_id, db.worlds_dir() / world_id, bank.seed, bank.size, found, store, world.build_ms(world_id)
+        )
+    return result.model_copy(update={"elapsed_ms": round((time.perf_counter() - started) * 1000)})
 
 
 @app.get("/api/eval/{world_id}/reveal", response_model=Reveal)
 def reveal(world_id: WorldPath, actor: ActingAs) -> Reveal:
-    _not_built("A9")
+    """The answer key and the hidden settings of a demo bank."""
+    with _store(world_id) as store:
+        result = scoring.reveal(world_id, db.worlds_dir() / world_id)
+        audit.append(store, actor, "ANSWER_KEY_SHOWN", {"world_id": world_id, "rows": result.total})
+    return result

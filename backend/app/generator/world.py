@@ -27,6 +27,8 @@ from .customers import make_customers
 from .events import make_events
 
 BANK_DB = "bank.db"
+# How long the build took. Kept next to the bank, not in it: a time is no part of the world.
+BUILD_RECORD = "build.json"
 DEFAULT_AS_OF = date(2026, 10, 10)
 DEFAULT_RATE = 0.02
 SIZES = (5000, 20000)
@@ -181,12 +183,26 @@ def start_build(settings: Settings, world_id: str | None = None,
     return world_id
 
 
+def record_build(folder: Path, seconds: float) -> None:
+    (folder / BUILD_RECORD).write_text(json.dumps({"build_ms": round(seconds * 1000)}), encoding="utf-8")
+
+
+def build_ms(world_id: str) -> int | None:
+    """How long the demo bank took to build, when it was measured."""
+    try:
+        return json.loads((db.worlds_dir() / world_id / BUILD_RECORD).read_text(encoding="utf-8"))["build_ms"]
+    except (OSError, ValueError, KeyError):
+        return None
+
+
 def _build(parent: Path, world_id: str, settings: Settings,
            on_ready: Callable[[str], None] | None = None) -> None:
     state = _building[world_id]
     built = False
     try:
+        started = time.perf_counter()
         build_world(parent, world_id, settings, lambda percent: state.update(progress=percent))
+        record_build(parent / world_id, time.perf_counter() - started)
         del _building[world_id]
         built = True
     except Exception:
@@ -246,6 +262,7 @@ def main() -> None:
     started = time.perf_counter()
     counts = build_world(parent, args.id, Settings(args.seed, args.size, traps=args.traps, surprise=args.surprise))
     seconds = time.perf_counter() - started
+    record_build(parent / args.id, seconds)
     for name, count in counts.items():
         print(f"{name:>24}  {count:>9,}")
     print(f"{'built in':>24}  {seconds:>8.1f} s   seed {args.seed}, world {args.id}")

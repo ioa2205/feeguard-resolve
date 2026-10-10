@@ -47,11 +47,11 @@ class _ModelAnswer(BaseModel):
     card: Literal["HUMO", "UZCARD"] | None
 
 
-def parse(text: str, received: date) -> Reading:
-    """Reads one complaint that was received on `received`."""
+def parse(text: str, received: date, use_model: bool = True) -> Reading:
+    """Reads one complaint that was received on `received`. `use_model=False` reads by rules only."""
     amounts = [amount.value for amount in find_amounts(text)]
     lang = detect_lang(text)
-    answer = _ask_model(text, received)
+    answer = _ask_model(text, received) if use_model else None
     if answer:
         claim_type, period, card, mode = answer.claim_type, answer.period, answer.card, "llm"
     else:
