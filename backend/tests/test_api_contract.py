@@ -40,11 +40,11 @@ def test_the_published_paths_are_exactly_the_frozen_list(client):
 
 
 def test_a_path_that_is_not_built_answers_501_in_the_error_shape(client):
-    response = client.get("/api/audit")
+    response = client.post("/api/cases/C-0001/improve-draft")
 
     assert response.status_code == 501
     assert response.json()["error"]["code"] == "NOT_BUILT"
-    assert "A11" in response.json()["error"]["message"]
+    assert "B6" in response.json()["error"]["message"]
 
 
 def test_an_unknown_path_answers_404_in_the_error_shape(client):

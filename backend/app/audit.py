@@ -1,9 +1,9 @@
-"""Audit log with a SHA-256 hash chain (PLAN Part 22). Task A11.
+"""Audit log with a SHA-256 hash chain (PLAN Part 22). Tasks A5 and A11.
 
 Every entry holds the hash of the entry before it, so a changed or removed
-entry breaks the chain from that point on. Writing is here since task A5,
-because every result must name its audit entry. The screen and the check that
-a changed row is noticed are task A11.
+entry breaks the chain from that point on. This shows tampering; it does not
+prevent it. In production the latest hash would be copied to a system the app
+cannot write to.
 """
 
 import hashlib
@@ -46,3 +46,17 @@ def first_broken(store: sqlite3.Connection) -> str | None:
             return audit_id(number)
         prev_hash = stored
     return None
+
+
+def entries(store: sqlite3.Connection, limit: int, offset: int) -> tuple[list[dict], int]:
+    """A page of entries, the newest first, and how many there are."""
+    (total,) = store.execute("SELECT count(*) FROM audit_log").fetchone()
+    rows = store.execute(
+        "SELECT id, at, actor, action, payload_json, prev_hash, hash FROM audit_log ORDER BY id DESC LIMIT ? OFFSET ?",
+        (limit, offset),
+    )
+    return [
+        {"id": audit_id(number), "at": at, "actor": actor, "action": action, "payload": json.loads(payload_json),
+         "prev_hash": prev_hash, "hash": stored}
+        for number, at, actor, action, payload_json, prev_hash, stored in rows
+    ], total

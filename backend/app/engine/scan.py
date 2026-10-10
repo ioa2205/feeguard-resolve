@@ -70,8 +70,12 @@ def findings_of(world_id: str, bank: Bank) -> BankFindings:
 
 
 def forget(world_id: str) -> None:
-    """Call when the bank data of a demo bank has changed or the demo bank is gone."""
-    _kept.pop(world_id, None)
+    """Call when the bank data of a demo bank has changed or the demo bank is gone. Waits
+    for a pass that is running, so it cannot keep findings of the old data."""
+    with _guard:
+        lock = _locks.setdefault(world_id, threading.Lock())
+    with lock:
+        _kept.pop(world_id, None)
 
 
 def scan(finding_type: str, found: BankFindings, bank: Bank) -> schemas.ScanResult:

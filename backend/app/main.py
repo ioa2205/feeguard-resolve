@@ -27,6 +27,7 @@ from .engine.wording import charge_name
 from .errors import ApiError
 from .eval import scoreboard as scoring
 from .generator import complaints as sandbox_complaints
+from .generator import tamper as sandbox_tamper
 from .generator import world
 from .reports import action_plan as plans
 from .reports import exports
@@ -215,8 +216,17 @@ def create_world(body: WorldCreate, actor: ActingAs) -> WorldCreated:
         seed=body.seed, size=body.size, defects=dict(body.defects),
         complaint_rate=body.complaint_rate, traps=body.traps, surprise=body.surprise,
     )
+    def ready(world_id: str) -> None:
+        with _store(world_id) as store:
+            # Only what the builder chose openly. The hidden settings stay in the answer key.
+            audit.append(store, actor, "DEMO_BANK_BUILT", {
+                "world_id": world_id, "seed": body.seed, "size": body.size, "surprise": body.surprise,
+                "mistakes": sorted(body.defects) if not body.surprise else "hidden", "traps": body.traps,
+            })
+        _warm(world_id)
+
     try:
-        return WorldCreated(world_id=world.start_build(settings, on_ready=_warm))
+        return WorldCreated(world_id=world.start_build(settings, on_ready=ready))
     except world.Busy:
         raise ApiError(429, "BUSY", "Another demo bank is being built. Try again in a moment.") from None
 
@@ -236,7 +246,22 @@ def get_world(world_id: WorldPath) -> World:
 
 @app.post("/api/worlds/{world_id}/tamper", response_model=TamperResult)
 def tamper(world_id: WorldPath, body: TamperRequest, actor: ActingAs) -> TamperResult:
-    _not_built("A10")
+    """Adds an extra debit to a loan by hand. The Sandbox Bank writes it; FeeGuard finds it on the next check."""
+    if world_id == DEFAULT_WORLD_ID:
+        raise ApiError(409, "DEFAULT_BANK", "The default demo bank stays as it was built, so every visitor sees "
+                                            "the same numbers. Build your own demo bank and add the debit there.")
+    _bank(world_id).close()  # the demo bank must exist and be ready
+    try:
+        added = sandbox_tamper.add_debit(db.worlds_dir() / world_id, body.contract_id, body.card_id, body.amount)
+    except sandbox_tamper.Refused as refused:
+        raise ApiError(refused.status, refused.code, refused.message) from None
+    scanning.forget(world_id)  # the kept findings no longer match the bank
+    with _store(world_id) as store:
+        audit_id = audit.append(store, actor, "DEBIT_ADDED_BY_HAND", {
+            "contract_id": body.contract_id, "card_id": body.card_id, "amount": body.amount, "debit_id": added["id"],
+        })
+    threading.Thread(target=_warm, args=(world_id,), daemon=True).start()
+    return TamperResult(debit=schemas.DebitRow(**added), audit_id=audit_id)
 
 
 @app.get("/api/customers", response_model=CustomerList)
@@ -488,7 +513,11 @@ def audit_log(
     limit: Annotated[int, Query(ge=1, le=500)] = 100,
     offset: Annotated[int, Query(ge=0)] = 0,
 ) -> AuditLog:
-    _not_built("A11")
+    """Every action on this demo bank, the newest first, and whether the hash chain is intact."""
+    with _store(world) as store:
+        broken_at = audit.first_broken(store)
+        shown, total = audit.entries(store, limit, offset)
+    return AuditLog(chain_intact=broken_at is None, broken_at=broken_at, entries=shown, total=total)
 
 
 # --- Sandbox Bank: scoring. These two read the answer key. -----------------

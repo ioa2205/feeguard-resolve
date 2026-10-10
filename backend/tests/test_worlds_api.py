@@ -37,6 +37,13 @@ def test_a_new_demo_bank_is_built_in_the_background_and_becomes_ready(client):
         "size": 5000, "seed": 7741, "as_of_date": "2026-10-10",
     }
     assert client.get("/api/worlds").json() == {"items": [shown]}
+    # The build is in the new bank's audit log, with what the builder chose and nothing hidden (task A11).
+    logged = lambda: client.get("/api/audit", headers={"X-World-Id": world_id}).json()["entries"]
+    assert wait_until(lambda: any(entry["action"] == "DEMO_BANK_BUILT" for entry in logged()))
+    entry = logged()[-1]
+    assert entry["actor"] == "jury"
+    assert entry["payload"] == {"world_id": world_id, "seed": 7741, "size": 5000, "surprise": False,
+                                "mistakes": ["DOUBLE_DEBIT", "ILLEGAL_FEE"], "traps": 8}
 
 
 def test_a_second_build_at_the_same_time_answers_429(client, monkeypatch):
