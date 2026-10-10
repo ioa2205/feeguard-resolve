@@ -29,6 +29,7 @@ from .events import make_events
 BANK_DB = "bank.db"
 # How long the build took. Kept next to the bank, not in it: a time is no part of the world.
 BUILD_RECORD = "build.json"
+MAX_WORLDS = 10  # demo banks kept on disk; the oldest goes first, never the default one (PLAN Part 22)
 DEFAULT_AS_OF = date(2026, 10, 10)
 DEFAULT_RATE = 0.02
 SIZES = (5000, 20000)
@@ -163,14 +164,39 @@ _building: dict[str, dict] = {}  # world_id -> what GET /api/worlds/{id} shows w
 _one_build = threading.Lock()
 
 
+@dataclass(frozen=True)
+class Started:
+    world_id: str
+    removed: list[str]  # old demo banks deleted to make room
+
+
+def prune(parent: Path, keep: int) -> list[str]:
+    """Deletes the oldest demo banks until at most `keep` are left. Never the default one."""
+    def built_at(folder: Path) -> float:
+        record = folder / BUILD_RECORD
+        return (record if record.is_file() else folder / BANK_DB).stat().st_mtime
+
+    banks = [p for p in parent.iterdir() if (p / BANK_DB).is_file()] if parent.is_dir() else []
+    removable = sorted((p for p in banks if p.name != "default"), key=built_at)
+    removed = []
+    while len(banks) - len(removed) > keep and removable:
+        folder = removable.pop(0)
+        shutil.rmtree(folder, ignore_errors=True)
+        if not (folder / BANK_DB).exists():
+            removed.append(folder.name)
+    return removed
+
+
 def start_build(settings: Settings, world_id: str | None = None,
-                on_ready: Callable[[str], None] | None = None) -> str:
-    """Builds in the background. `on_ready` is called with the world id once the build has succeeded."""
+                on_ready: Callable[[str], None] | None = None, keep: int | None = None) -> "Started":
+    """Builds in the background. `on_ready` is called with the world id once the build has succeeded.
+    With `keep`, old demo banks are deleted first so that at most `keep` remain with the new one."""
     if not _one_build.acquire(blocking=False):
         raise Busy
     try:
         parent = db.worlds_dir()
         parent.mkdir(parents=True, exist_ok=True)
+        removed = prune(parent, keep - 1) if keep else []
         world_id = world_id or _free_id(parent, settings.seed)
         _building[world_id] = {
             "world_id": world_id, "status": "building", "progress": 0, "size": settings.size,
@@ -180,7 +206,7 @@ def start_build(settings: Settings, world_id: str | None = None,
     except BaseException:
         _one_build.release()
         raise
-    return world_id
+    return Started(world_id, removed)
 
 
 def record_build(folder: Path, seconds: float) -> None:

@@ -18,7 +18,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from . import audit, db, schemas
+from . import audit, db, schemas, security
 from .ai import classifier, drafts, llm, parse_complaint
 from .connector import Bank
 from .engine import investigate as investigation
@@ -112,6 +112,22 @@ _CODES = {400: "BAD_REQUEST", 404: "NOT_FOUND", 409: "CONFLICT", 429: "TOO_MANY_
 
 def _error(status: int, code: str, message: str) -> JSONResponse:
     return JSONResponse(status_code=status, content={"error": {"code": code, "message": message}})
+
+
+@app.middleware("http")
+async def _limits(request: Request, call_next):
+    """A cap on the request size and a limit on requests per address (PLAN Part 22, task SEC1)."""
+    if request.url.path.startswith("/api/") and request.url.path != "/api/health":
+        length = request.headers.get("content-length", "")
+        if length.isdigit() and int(length) > security.MAX_BODY:
+            return _error(400, "TOO_LARGE", "The request is too large.")
+        if security.enabled():
+            kind = "write" if request.method in security.WRITES else "read"
+            address = security.client_address(request.client.host if request.client else None,
+                                              request.headers.get("x-forwarded-for"))
+            if not security.limiter.allow(address, kind, time.monotonic()):
+                return _error(429, "TOO_MANY_REQUESTS", "Too many requests from this address. Wait a minute and try again.")
+    return await call_next(request)
 
 
 @app.exception_handler(ApiError)
@@ -223,9 +239,12 @@ def create_world(body: WorldCreate, actor: ActingAs) -> WorldCreated:
         _warm(world_id)
 
     try:
-        return WorldCreated(world_id=world.start_build(settings, on_ready=ready))
+        built = world.start_build(settings, on_ready=ready, keep=world.MAX_WORLDS)
     except world.Busy:
         raise ApiError(429, "BUSY", "Another demo bank is being built. Try again in a moment.") from None
+    for gone in built.removed:
+        scanning.forget(gone)
+    return WorldCreated(world_id=built.world_id)
 
 
 @app.get("/api/worlds", response_model=WorldList)
