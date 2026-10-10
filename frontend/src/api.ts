@@ -134,7 +134,8 @@ export const api = {
   updateActionPlan: (planId: string, body: ActionPlanUpdate) =>
     call<ActionPlanRow>('PUT', `/api/reports/action-plan/${id(planId)}`, mocks.actionPlan.items[0], body),
   quarterly: () => call<QuarterlyReport>('GET', '/api/reports/quarterly', mocks.quarterly),
-  audit: () => call<AuditLog>('GET', '/api/audit', mocks.audit),
+  audit: (limit = 100, offset = 0) =>
+    call<AuditLog>('GET', `/api/audit?limit=${limit}&offset=${offset}`, mocks.audit),
 
   /** A file, not JSON. A plain link cannot carry the demo bank header, so it is fetched. */
   refundsCsv: async (findingType: DefectType): Promise<Blob> => {

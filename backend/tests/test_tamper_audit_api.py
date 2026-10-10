@@ -127,3 +127,29 @@ def test_editing_one_row_breaks_the_chain_from_that_row_on(client):
 
     assert log.chain_intact is False
     assert log.broken_at == f"A-{first}"
+
+
+def test_entries_written_at_the_same_moment_still_form_one_chain(tmp_path, monkeypatch):
+    import threading
+
+    from app import audit
+
+    monkeypatch.setenv("WORLDS_DIR", str(tmp_path))
+    (tmp_path / "w").mkdir()
+    start = threading.Barrier(8)
+
+    def write(number):
+        start.wait()
+        for turn in range(15):
+            with closing(db.open_feeguard("w")) as store, store:
+                audit.append(store, "officer", "COMPLAINT_CHECKED", {"writer": number, "turn": turn})
+
+    threads = [threading.Thread(target=write, args=(number,)) for number in range(8)]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join()
+
+    with closing(db.open_feeguard("w")) as store:
+        assert store.execute("SELECT count(*) FROM audit_log").fetchone()[0] == 120
+        assert audit.first_broken(store) is None

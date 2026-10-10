@@ -25,6 +25,10 @@ def audit_id(number: int) -> str:
 
 def append(store: sqlite3.Connection, actor: str, action: str, payload: dict) -> str:
     """Adds one entry and returns its id. The caller commits."""
+    if not store.in_transaction:
+        # Take the write lock before reading the last hash, so two requests at the same
+        # moment cannot both chain onto it. A transaction that has written holds it already.
+        store.execute("BEGIN IMMEDIATE")
     last = store.execute("SELECT hash FROM audit_log ORDER BY id DESC LIMIT 1").fetchone()
     prev_hash = last[0] if last else FIRST_HASH
     at = db.now()

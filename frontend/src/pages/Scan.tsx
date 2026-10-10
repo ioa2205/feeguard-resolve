@@ -31,16 +31,15 @@ const WERE_HIT: Record<DefectType, [one: string, many: string]> = {
   ],
 }
 
-// The plain words for what the cases share. A name the screen does not know is shown as sent.
-const SHARED: Record<string, string> = {
-  batch_run: 'came from one batch run',
-  cards_count: 'are customers with this many cards',
-  channel: 'were paid through one channel',
-  product: 'are loans of one product',
-  schedule_version: 'are loans whose schedule was changed',
-  tariff_version: 'are loans signed under one tariff',
-  branch: 'are loans of one branch',
-  region: 'are customers of one region',
+// The plain names of what the cases may share (backend engine/causes.py). An unknown name is shown as sent.
+const ATTRIBUTE: Record<string, string> = {
+  batch_run: 'Billing run',
+  cards: 'Cards of the customer',
+  channel: 'Paid through',
+  product: 'Product',
+  schedule: 'Payment schedule',
+  tariff: 'Tariff',
+  region: 'Region',
 }
 
 function Big({ children }: { children: string }) {
@@ -78,37 +77,53 @@ function Headline({ result }: { result: ScanResult }) {
   )
 }
 
-function shared(attribute: CauseAttribute): string {
-  const words = SHARED[attribute.name] ?? `share the same ${attribute.name.replace(/_/g, ' ')}`
-  const times = Math.round(attribute.lift)
-  return `${formatShare(attribute.support)} of the cases ${words} (${attribute.value}). That is ${
-    times > 1 ? `${times} times more than normal` : 'about as often as normal'
-  }.`
+/** 46.97 -> "47 times", 6.5 -> "6.5 times", 4.04 -> "4 times". */
+function times(lift: number): string {
+  return `${lift >= 10 ? Math.round(lift) : Number(lift.toFixed(1))} times`
 }
 
 function Why({ result }: { result: ScanResult }) {
   const { cause } = result
   return (
-    <section className="max-w-[70ch]">
+    <section className="max-w-[90ch] space-y-2">
       <h2 className="border-ink mb-2 border-b-2 pb-1"><Label>Why it happened</Label></h2>
-      {cause ? (
-        <div className="space-y-1">
-          {cause.attributes.map((attribute) => (
-            <p key={attribute.name + attribute.value}>{shared(attribute)}</p>
-          ))}
+      {!cause && <p>Too few cases to name a cause: FeeGuard names one only from {FEW_CASES} cases on.</p>}
+      {cause && (
+        <>
           <p>{cause.sentence}</p>
+          {cause.attributes.length > 0 && (
+            <div className="overflow-x-auto">
+              <table className="text-table w-full max-w-3xl min-w-[520px] border-collapse">
+                <thead>
+                  <tr className="border-ink border-b-2 text-left">
+                    <th scope="col" className="px-3 py-2"><Label>What they share</Label></th>
+                    <th scope="col" className="px-3 py-2"><Label>Value</Label></th>
+                    <th scope="col" className="px-3 py-2 text-right"><Label>Of the cases</Label></th>
+                    <th scope="col" className="px-3 py-2"><Label>Compared with normal</Label></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {cause.attributes.map((attribute: CauseAttribute, index) => (
+                    <tr key={attribute.name + attribute.value} className={`border-line border-t ${index % 2 ? 'bg-stripe' : ''}`}>
+                      <td className="px-3 py-2">{ATTRIBUTE[attribute.name] ?? attribute.name}</td>
+                      <td className="px-3 py-2">{attribute.value}</td>
+                      <td className="px-3 py-2 text-right tabular-nums">{formatShare(attribute.support)}</td>
+                      <td className="px-3 py-2">{times(attribute.lift)} more than normal</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
           {cause.suggested_fix && (
             <p>
               <strong>Suggested fix:</strong> {cause.suggested_fix}
             </p>
           )}
-        </div>
-      ) : result.items.length < FEW_CASES ? (
-        <p>Too few cases to name a cause.</p>
-      ) : (
-        <p>
-          Not built yet: FeeGuard does not name the cause of a group of cases. Task A8 in the plan builds it.
-        </p>
+          <p className="text-small">
+            Shown are values held by at least 60% of the cases and at least 3 times as common as among all loans.
+          </p>
+        </>
       )}
     </section>
   )

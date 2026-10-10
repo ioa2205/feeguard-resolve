@@ -50,7 +50,7 @@ export function Frame() {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <header className={zone.band}>
+      <header className={`${zone.band} print:hidden`}>
         <div className="mx-auto max-w-[1440px] px-4 py-2 md:px-6">
           <div className="flex flex-wrap items-center gap-x-6">
             <span className="font-condensed text-stamp-text font-bold tracking-[0.08em]">FEEGUARD RESOLVE</span>
@@ -114,7 +114,7 @@ export function Frame() {
         </div>
       </header>
 
-      <nav aria-label="Screens" className="border-line bg-sheet border-b">
+      <nav aria-label="Screens" className="border-line bg-sheet border-b print:hidden">
         <div className="mx-auto flex max-w-[1440px] flex-wrap gap-x-6 px-4 md:px-6">
           {zone.menu.map((item) => (
             <NavLink
@@ -129,7 +129,7 @@ export function Frame() {
         </div>
       </nav>
 
-      <div className="border-line bg-sheet border-b">
+      <div className="border-line bg-sheet border-b print:hidden">
         <p className="mx-auto max-w-[1440px] px-4 py-1 md:px-6">
           <span className="font-condensed text-label mr-3 font-semibold tracking-[0.06em]">NAMUNA · SPECIMEN</span>
           Every customer, card and payment here is invented.
@@ -144,7 +144,7 @@ export function Frame() {
         <Outlet />
       </main>
 
-      <footer className="border-line text-ink-soft border-t">
+      <footer className="border-line text-ink-soft border-t print:hidden">
         <p className="mx-auto max-w-[1440px] px-4 py-3 md:px-6">
           FeeGuard only reads bank data. A person approves every result.
         </p>

@@ -8,7 +8,10 @@ import { Mark } from '../components/Marks'
 import { Button, Empty, Label, Loading, PageHead, Problem } from '../components/Parts'
 import { formatDate, formatDateTime, formatMonth, formatSom } from '../format'
 import { useLoad } from '../hooks'
-import type { CaseResult, Cleared, ContractClause, Decision, DecisionAction, Evidence, Finding, Verdict } from '../types'
+import { useSession } from '../session'
+import type {
+  CaseResult, Cleared, ContractClause, Decision, DecisionAction, DraftReply, Evidence, Finding, Verdict,
+} from '../types'
 import {
   ACTING_AS, CLAIM, DECIDED, LANGUAGE, LANG_ATTR, LETTER, MISTAKE, PAID_BY, READ_BY, RECEIVED_BY, VERDICT, verified,
 } from '../words'
@@ -263,6 +266,56 @@ function FindOthers({ findings, confirmed }: { findings: Finding[]; confirmed: b
   )
 }
 
+function Letter({ result, confirmed, onChanged }: {
+  result: CaseResult; confirmed: boolean; onChanged: (draft: DraftReply) => void
+}) {
+  const { health } = useSession()
+  const [busy, setBusy] = useState(false)
+  const [note, setNote] = useState<string | null>(null)
+  const [error, setError] = useState<Error | null>(null)
+  const draft = result.draft_reply as DraftReply
+
+  async function improve() {
+    setBusy(true)
+    setError(null)
+    setNote(null)
+    try {
+      const next = await api.improveDraft(result.case_id)
+      onChanged(next)
+      if (next.source === 'template') {
+        setNote(health?.llm_mode === 'llm'
+          ? 'The local AI’s wording changed a number or the language, so the standard letter stays.'
+          : 'The local AI is off, so the standard letter stays.')
+      }
+    } catch (failure) {
+      setError(failure as Error)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <Block title="Letter to the customer">
+      <article className="border-line bg-sheet aspect-[210/297] border p-6">
+        <p className="text-small border-line mb-4 border-b pb-2">
+          {LETTER[draft.source]} · <strong>{confirmed ? 'Confirmed by a person' : 'Draft, not approved'}</strong>
+        </p>
+        <p lang={LANG_ATTR[draft.lang]} className="text-words font-serif whitespace-pre-line">{draft.text}</p>
+      </article>
+      {draft.source === 'template' && (
+        <div className="mt-2 space-y-1">
+          <Button disabled={busy} onClick={improve}>{busy ? 'Asking the local AI…' : 'Improve the wording'}</Button>
+          <p className="text-small">
+            The local AI may reword the letter. FeeGuard keeps its text only if every number and the language stay the same.
+          </p>
+          {note && <p role="status">{note}</p>}
+          {error && <Problem error={error} onRetry={improve} />}
+        </div>
+      )}
+    </Block>
+  )
+}
+
 function CaseView({ complaintId }: { complaintId: string }) {
   const { state, reload, replace } = useLoad<CaseResult>(async () => {
     try {
@@ -356,21 +409,11 @@ function CaseView({ complaintId }: { complaintId: string }) {
 
           {!result.draft_reply && (
             <Block title="Letter to the customer">
-              <p>Not built yet: FeeGuard does not write the letter. Task B6 in the plan builds it.</p>
+              <p>This complaint was checked before letters were written. Check it again to get the letter.</p>
             </Block>
           )}
           {result.draft_reply && (
-            <Block title="Letter to the customer">
-              <article className="border-line bg-sheet aspect-[210/297] border p-6">
-                <p className="text-small border-line mb-4 border-b pb-2">
-                  {LETTER[result.draft_reply.source]} ·{' '}
-                  <strong>{confirmed ? 'Confirmed by a person' : 'Draft, not approved'}</strong>
-                </p>
-                <p lang={LANG_ATTR[result.draft_reply.lang]} className="text-words font-serif whitespace-pre-line">
-                  {result.draft_reply.text}
-                </p>
-              </article>
-            </Block>
+            <Letter result={result} confirmed={confirmed} onChanged={(draft) => replace({ ...result, draft_reply: draft })} />
           )}
         </Column>
       </div>

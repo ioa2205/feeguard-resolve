@@ -15,6 +15,8 @@ interface Session {
   setWorldId: (worldId: string) => void
   /** null while loading or when the server did not answer. */
   worlds: World[] | null
+  /** Loads the list of demo banks again, after one was built. */
+  refreshWorlds: () => Promise<void>
   health: Health | null
 }
 
@@ -53,6 +55,12 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const [worlds, setWorlds] = useState<World[] | null>(null)
   const [health, setHealth] = useState<Health | null>(null)
 
+  const refreshWorlds = () =>
+    api.worlds().then(
+      (list) => setWorlds(list.items),
+      () => setWorlds(null),
+    )
+
   useEffect(() => {
     api.health().then(setHealth, () => setHealth(null))
     api.worlds().then(
@@ -85,8 +93,10 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         setWorldState(next)
       },
       worlds,
+      refreshWorlds,
       health,
     }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [actor, worldId, worlds, health],
   )
 

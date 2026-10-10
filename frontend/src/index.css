@@ -89,3 +89,48 @@ header :focus-visible {
     animation: none;
   }
 }
+
+/* Print (DESIGN section 13): A4, 20 mm margins, Charis SIL 12 pt, black on white, no
+   stripes, no band, menu or buttons. The specimen line and the page number are in the
+   page margins, so they repeat on every page; a draft also says so on every page. */
+@media print {
+  @page {
+    size: A4;
+    margin: 20mm;
+    @top-left {
+      content: 'NAMUNA · SPECIMEN — invented data';
+      font: 600 9pt 'Fira Sans Condensed', sans-serif;
+      letter-spacing: 0.06em;
+    }
+    @bottom-center {
+      content: 'Page ' counter(page) ' of ' counter(pages);
+      font: 10pt 'Charis SIL', serif;
+    }
+  }
+  @page draft {
+    @top-right {
+      content: 'Draft, not approved';
+      font: 600 9pt 'Fira Sans Condensed', sans-serif;
+    }
+  }
+  .print-draft {
+    page: draft;
+  }
+  body {
+    background: white;
+    color: black;
+    font-family: 'Charis SIL', serif;
+    font-size: 12pt;
+  }
+  .bg-stripe,
+  .bg-sheet,
+  .bg-desk {
+    background: none !important;
+  }
+  thead {
+    display: table-header-group;
+  }
+  tr {
+    break-inside: avoid;
+  }
+}
