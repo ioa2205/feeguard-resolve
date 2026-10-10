@@ -293,7 +293,7 @@ def test_the_scan_finds_everyone_in_the_answer_key_and_splits_them(client, world
         assert result.total_excess == result.total_affected and result.avg_days_early is None
     assert [item.complained for item in result.items] == sorted((item.complained for item in result.items), reverse=True)
     assert all(item.complaint_id for item in result.items if item.complained)
-    assert result.cause is None  # the cause finder is task A8
+    assert result.cause.attributes and result.cause.suggested_fix  # at least 20 findings: a cause is named (A8)
 
 
 def test_the_scan_gives_each_contract_the_same_findings_as_checking_it_alone(world):

@@ -27,7 +27,9 @@ from .engine.wording import charge_name
 from .errors import ApiError
 from .generator import complaints as sandbox_complaints
 from .generator import world
+from .reports import action_plan as plans
 from .reports import exports
+from .reports import quarterly as quarterly_report
 from .schemas import (
     DEFAULT_WORLD_ID,
     ActionPlan,
@@ -422,21 +424,41 @@ def scan(finding_id: str, world: WorldId, actor: ActingAs) -> ScanResult:
 # --- FeeGuard: reports and audit -----------------------------------------
 
 
+def _scans(world_id: str, bank: Bank):
+    """The bank-wide scan of each mistake type, for the reports."""
+    found = scanning.findings_of(world_id, bank)
+    return lambda finding_type: scanning.scan(finding_type, found, bank)
+
+
 @app.get("/api/reports/action-plan", response_model=ActionPlan)
 def action_plan(world: WorldId) -> ActionPlan:
-    _not_built("A8")
+    """A draft row for every confirmed mistake type, and the rows a person has saved."""
+    with _bank(world) as bank, _store(world) as store:
+        return plans.plan(store, _scans(world, bank))
 
 
 @app.put("/api/reports/action-plan/{plan_id}", response_model=ActionPlanRow)
 def update_action_plan(
     plan_id: str, body: ActionPlanUpdate, world: WorldId, actor: ActingAs
 ) -> ActionPlanRow:
-    _not_built("A8")
+    """A person edits a row of the plan, or approves it."""
+    finding_type = plans.finding_type_of(plan_id)
+    with _store(world) as store:
+        shown = {row.id for row in plans.saved_rows(store).values()} | {
+            plans.row_id(kind) for kind in plans.confirmed_types(store)
+        }
+        if not finding_type or plan_id not in shown:
+            raise ApiError(404, "NOT_FOUND", "The plan has no row with this id.")
+        row = plans.save(store, plan_id, finding_type, body)
+        audit.append(store, actor, "PLAN_ROW_SAVED", {"plan_id": plan_id, "status": body.status})
+    return row
 
 
 @app.get("/api/reports/quarterly", response_model=QuarterlyReport)
 def quarterly(world: WorldId) -> QuarterlyReport:
-    _not_built("A8")
+    """Complaints of the last full quarter by type, region, channel and verdict, and recurring issues."""
+    with _bank(world) as bank, _store(world) as store:
+        return quarterly_report.report(bank, store, _scans(world, bank))
 
 
 @app.get(

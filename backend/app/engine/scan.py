@@ -2,8 +2,9 @@
 
 The scan runs the same checker functions as one complaint (`checkers.CHECKERS`).
 Reading a whole bank takes seconds, so the findings of all four checks are kept
-in memory per demo bank after the first pass. Bank data changes only when a
-debit is added by hand (task A10), which must call `forget`.
+in memory per demo bank after the first pass, with what the cause finder needs
+(task A8). Bank data changes only when a debit is added by hand (task A10),
+which must call `forget`.
 """
 
 import threading
@@ -12,6 +13,7 @@ from dataclasses import dataclass
 
 from .. import schemas
 from ..connector import Bank
+from . import causes
 from . import timeline as timelines
 from .checkers import CHECKERS, Finding, early_debit
 
@@ -25,6 +27,8 @@ class BankFindings:
     by_type: dict[str, tuple[Finding, ...]]
     owner_of: dict[str, str]  # contract id -> customer id
     seconds: float  # what the full pass took
+    traits: dict[str, tuple[tuple[causes.Trait, ...], ...]]  # by type, in the order of `by_type`
+    profiles: dict[str, causes.Profile]  # the eligible events of each type
 
 
 _kept: dict[str, BankFindings] = {}
@@ -36,13 +40,23 @@ def check_bank(bank: Bank) -> BankFindings:
     """All four checks on every contract of the bank. The slow pass."""
     started = time.perf_counter()
     found: dict[str, list[Finding]] = {kind: [] for kind in CHECKERS}
+    traits: dict[str, list[tuple[causes.Trait, ...]]] = {kind: [] for kind in CHECKERS}
+    profiles = {kind: causes.Profile() for kind in CHECKERS}
+    regions = {customer.id: customer.region for customer in bank.customers().values()}
     owner_of: dict[str, str] = {}
     for contract_id, data in bank.load().items():
         owner_of[contract_id] = data.contract.customer_id
+        region = regions[data.contract.customer_id]
         timeline = timelines.build(data)
+        causes.count_eligible(timeline, region, profiles)
         for kind, check in CHECKERS.items():
-            found[kind].extend(check(timeline).findings)
-    return BankFindings({kind: tuple(items) for kind, items in found.items()}, owner_of, time.perf_counter() - started)
+            for finding in check(timeline).findings:
+                found[kind].append(finding)
+                traits[kind].append(causes.traits_of(finding, data, region))
+    return BankFindings(
+        {kind: tuple(items) for kind, items in found.items()}, owner_of, time.perf_counter() - started,
+        {kind: tuple(items) for kind, items in traits.items()}, profiles,
+    )
 
 
 def findings_of(world_id: str, bank: Bank) -> BankFindings:
@@ -95,7 +109,7 @@ def scan(finding_type: str, found: BankFindings, bank: Bank) -> schemas.ScanResu
         complained=len(complained),
         silent=len(affected) - len(complained),
         avg_days_early=round(sum(early) / len(early)) if early and finding_type == early_debit.TYPE else None,
-        cause=None,  # task A8 names the cause
+        cause=causes.find(finding_type, list(found.traits[finding_type]), found.profiles[finding_type]),
         items=items,
         elapsed_ms=0,
     )
