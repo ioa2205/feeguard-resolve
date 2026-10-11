@@ -8,3 +8,6 @@ RUN npm run build
 # Caddy serves the built screens. Its Caddyfile is mounted by deploy/docker-compose.yml.
 FROM caddy:2-alpine
 COPY --from=build /app/dist /srv
+
+# Railway reads this one; deploy/docker-compose.yml mounts deploy/Caddyfile over it.
+COPY Caddyfile.railway /etc/caddy/Caddyfile
