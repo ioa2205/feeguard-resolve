@@ -1,0 +1,18 @@
+{
+  "run_id": "CR-0001",
+  "at": "2026-10-11T12:18:42",
+  "trigger": "START",
+  "scope": "ALL",
+  "loans_read": 20000,
+  "loans_total": 20000,
+  "new_findings": 2832,
+  "gone_findings": 0,
+  "elapsed_ms": 9763,
+  "incidents_opened": [
+    "INC-DOUBLE-DEBIT",
+    "INC-EARLY-DEBIT",
+    "INC-LATE-POSTING",
+    "INC-ILLEGAL-FEE"
+  ],
+  "incidents_grown": []
+}

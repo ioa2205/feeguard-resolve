@@ -4,6 +4,7 @@ import { api } from '../api'
 import { Empty, Label, Loading, PageHead, Problem } from '../components/Parts'
 import { count, daysBetween, formatDate, formatTime } from '../format'
 import { useLoad } from '../hooks'
+import { tx, useLang } from '../i18n'
 import { useSession } from '../session'
 import type { Complaint, World } from '../types'
 import { LANG_ATTR, MISTAKE, RECEIVED_BY, STATE, VERDICT, verified } from '../words'
@@ -12,7 +13,7 @@ import { LANG_ATTR, MISTAKE, RECEIVED_BY, STATE, VERDICT, verified } from '../wo
 // first is on top, and only its action is the filled button.
 
 function answerDue(complaint: Complaint, world: World | undefined): string {
-  if (!complaint.answer_due) return verified(null)
+  if (!complaint.answer_due) return tx(verified(null))
   if (!world) return formatDate(complaint.answer_due)
   const left = daysBetween(world.as_of_date, complaint.answer_due)
   if (left < 0) return `${count(-left, 'day')} late`
@@ -20,10 +21,11 @@ function answerDue(complaint: Complaint, world: World | undefined): string {
 }
 
 function state(complaint: Complaint): string {
-  return complaint.verdict ? `${STATE[complaint.status]}: ${VERDICT[complaint.verdict].toLowerCase()}` : STATE[complaint.status]
+  return complaint.verdict ? `${tx(STATE[complaint.status])}: ${tx(VERDICT[complaint.verdict]).toLowerCase()}` : tx(STATE[complaint.status])
 }
 
 export default function Inbox() {
+  useLang() // draw again when the language changes
   const { worldId, worlds, presets } = useSession()
   const { state: loaded, reload } = useLoad(() => api.complaints(), [worldId])
   const world = worlds?.find((item) => item.world_id === worldId)
@@ -38,7 +40,7 @@ export default function Inbox() {
       {preset && (
         <p className="border-line bg-sheet rounded-sheet mb-4 max-w-[70ch] border p-3">
           This demo bank rebuilds a public case: <strong>{preset.title}</strong>. {preset.what_happened} Check a
-          complaint about “{MISTAKE[preset.mistake].toLowerCase()}”, then press Find others.
+          complaint about “{tx(MISTAKE[preset.mistake]).toLowerCase()}”, then press Find others.
         </p>
       )}
       {loaded.status === 'loading' && <Loading lines={6} />}
@@ -69,7 +71,7 @@ export default function Inbox() {
                       {formatDate(complaint.created_at)}, {formatTime(complaint.created_at)}
                       <br />
                       <span className="text-ink-soft text-small">
-                        Complaint {complaint.complaint_id} · {RECEIVED_BY[complaint.channel]}
+                        Complaint {complaint.complaint_id} · {tx(RECEIVED_BY[complaint.channel])}
                       </span>
                     </td>
                     <td className="px-3 py-3">

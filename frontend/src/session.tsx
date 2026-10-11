@@ -7,6 +7,7 @@ import type { ReactNode } from 'react'
 import { api, setActor as sendActor, setWorld as sendWorld } from './api'
 import { DEFAULT_WORLD_ID } from './types'
 import type { Actor, Health, Preset, World } from './types'
+import { tx } from './i18n'
 import { MISTAKE } from './words'
 
 interface Session {
@@ -106,7 +107,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       bankName: (id) => {
         if (id === DEFAULT_WORLD_ID) return 'Default'
         const preset = presets.find((item) => item.world_id === id)
-        return preset ? `Public case: ${MISTAKE[preset.mistake].toLowerCase()}` : id
+        return preset ? `Public case: ${tx(MISTAKE[preset.mistake]).toLowerCase()}` : id
       },
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps

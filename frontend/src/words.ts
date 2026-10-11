@@ -1,13 +1,17 @@
-// The word list of DESIGN section 8.1. The screen says these words, always the same ones.
+// The word list of DESIGN section 8.1, in English, Uzbek (Latin) and Russian (DECISIONS D-041).
+// The screen says these words, always the same ones. Show one with `t(WORD[key])`.
 
+import type { Words } from './i18n'
 import type {
   Actor,
+  CheckTrigger,
   ClaimType,
   ComplaintChannel,
   ComplaintStatus,
   DecisionAction,
   DefectType,
   DraftSource,
+  IncidentStatus,
   Lang,
   Mode,
   PaymentChannel,
@@ -15,61 +19,64 @@ import type {
 } from './types'
 import { TO_VERIFY } from './types'
 
-export const VERDICT: Record<Verdict, string> = {
-  SUPPORTED: 'Customer is right',
-  NOT_SUPPORTED: 'Bank was right',
-  NEEDS_INFO: 'More information needed',
-  OUT_OF_SCOPE: 'Not one of the four checks',
+export const VERDICT: Record<Verdict, Words> = {
+  SUPPORTED: { en: 'Customer is right', uz: 'Mijoz haq', ru: 'Клиент прав' },
+  NOT_SUPPORTED: { en: 'Bank was right', uz: 'Bank haq edi', ru: 'Банк был прав' },
+  NEEDS_INFO: { en: 'More information needed', uz: 'Qoʻshimcha maʼlumot kerak', ru: 'Нужна дополнительная информация' },
+  OUT_OF_SCOPE: { en: 'Not one of the four checks', uz: 'Toʻrt tekshiruvga kirmaydi', ru: 'Не входит в четыре проверки' },
 }
 
-export const MISTAKE: Record<DefectType, string> = {
-  DOUBLE_DEBIT: 'Taken twice',
-  EARLY_DEBIT: 'Taken early',
-  LATE_POSTING: 'Recorded late, then fined',
-  ILLEGAL_FEE: 'Fee not allowed',
+export const MISTAKE: Record<DefectType, Words> = {
+  DOUBLE_DEBIT: { en: 'Taken twice', uz: 'Ikki marta yechilgan', ru: 'Списано дважды' },
+  EARLY_DEBIT: { en: 'Taken early', uz: 'Muddatidan oldin yechilgan', ru: 'Списано раньше срока' },
+  LATE_POSTING: { en: 'Recorded late, then fined', uz: 'Kech qayd etilib, jarima solingan', ru: 'Зачислено поздно, затем штраф' },
+  ILLEGAL_FEE: { en: 'Fee not allowed', uz: 'Ruxsat etilmagan komissiya', ru: 'Недопустимая комиссия' },
 }
 
-export const CLAIM: Record<ClaimType, string> = { ...MISTAKE, OTHER: 'Something else' }
-
-export const READ_BY: Record<Mode, string> = {
-  llm: 'the AI',
-  rules: 'rules (the AI is off)',
+export const CLAIM: Record<ClaimType, Words> = {
+  ...MISTAKE,
+  OTHER: { en: 'Something else', uz: 'Boshqa masala', ru: 'Другое' },
 }
 
-export const STATE: Record<ComplaintStatus, string> = {
-  NEW: 'Not checked yet',
-  CHECKED: 'Checked, waiting for a decision',
-  CONFIRMED: 'Confirmed',
-  DISMISSED: 'Dismissed',
-  CORRECTED: 'Corrected',
+export const READ_BY: Record<Mode, Words> = {
+  llm: { en: 'the AI', uz: 'sunʼiy intellekt', ru: 'ИИ' },
+  rules: { en: 'rules (the AI is off)', uz: 'qoidalar (SI oʻchiq)', ru: 'правила (ИИ выключен)' },
 }
 
-export const ACTING_AS: Record<Actor, string> = {
-  officer: 'Complaint officer',
-  compliance: 'Compliance head',
-  jury: 'Jury',
+export const STATE: Record<ComplaintStatus, Words> = {
+  NEW: { en: 'Not checked yet', uz: 'Hali tekshirilmagan', ru: 'Ещё не проверена' },
+  CHECKED: { en: 'Checked, waiting for a decision', uz: 'Tekshirildi, qaror kutilmoqda', ru: 'Проверена, ждёт решения' },
+  CONFIRMED: { en: 'Confirmed', uz: 'Tasdiqlandi', ru: 'Подтверждена' },
+  DISMISSED: { en: 'Dismissed', uz: 'Rad etildi', ru: 'Отклонена' },
+  CORRECTED: { en: 'Corrected', uz: 'Tuzatildi', ru: 'Исправлена' },
 }
 
-export const RECEIVED_BY: Record<ComplaintChannel, string> = {
-  APP: 'bank app',
-  CALL_CENTER: 'call centre',
-  BRANCH: 'bank branch',
-  WEB: 'website',
+export const ACTING_AS: Record<Actor, Words> = {
+  officer: { en: 'Complaint officer', uz: 'Shikoyatlar xodimi', ru: 'Сотрудник по жалобам' },
+  compliance: { en: 'Compliance head', uz: 'Komplayens rahbari', ru: 'Руководитель комплаенса' },
+  jury: { en: 'Jury', uz: 'Hakamlar', ru: 'Жюри' },
 }
 
-export const PAID_BY: Record<PaymentChannel, string> = {
-  AUTO_DEBIT: 'automatic debit',
-  PAYNET: 'Paynet',
-  CLICK: 'Click',
-  BRANCH: 'bank branch',
-  APP: 'bank app',
+export const RECEIVED_BY: Record<ComplaintChannel, Words> = {
+  APP: { en: 'bank app', uz: 'bank ilovasi', ru: 'приложение банка' },
+  CALL_CENTER: { en: 'call centre', uz: 'call-markaz', ru: 'колл-центр' },
+  BRANCH: { en: 'bank branch', uz: 'bank filiali', ru: 'отделение банка' },
+  WEB: { en: 'website', uz: 'veb-sayt', ru: 'сайт' },
 }
 
-export const LANGUAGE: Record<Lang, string> = {
-  uz_latn: 'Uzbek, Latin script',
-  uz_cyrl: 'Uzbek, Cyrillic script',
-  ru: 'Russian',
-  mixed: 'Uzbek and Russian, mixed',
+export const PAID_BY: Record<PaymentChannel, Words> = {
+  AUTO_DEBIT: { en: 'automatic debit', uz: 'avtomatik yechim', ru: 'автосписание' },
+  PAYNET: { en: 'Paynet', uz: 'Paynet', ru: 'Paynet' },
+  CLICK: { en: 'Click', uz: 'Click', ru: 'Click' },
+  BRANCH: { en: 'bank branch', uz: 'bank filiali', ru: 'отделение банка' },
+  APP: { en: 'bank app', uz: 'bank ilovasi', ru: 'приложение банка' },
+}
+
+export const LANGUAGE: Record<Lang, Words> = {
+  uz_latn: { en: 'Uzbek, Latin script', uz: 'oʻzbekcha, lotin yozuvi', ru: 'узбекский, латиница' },
+  uz_cyrl: { en: 'Uzbek, Cyrillic script', uz: 'oʻzbekcha, kirill yozuvi', ru: 'узбекский, кириллица' },
+  ru: { en: 'Russian', uz: 'ruscha', ru: 'русский' },
+  mixed: { en: 'Uzbek and Russian, mixed', uz: 'oʻzbekcha va ruscha aralash', ru: 'узбекский и русский вперемешку' },
 }
 
 /** The `lang` attribute for a customer's or a contract's own words. */
@@ -80,18 +87,46 @@ export const LANG_ATTR: Record<Lang, string> = {
   mixed: 'mul',
 }
 
-export const LETTER: Record<DraftSource, string> = {
-  template: 'Standard letter',
-  llm: 'Reworded by the AI',
+export const LETTER: Record<DraftSource, Words> = {
+  template: { en: 'Standard letter', uz: 'Standart xat', ru: 'Стандартное письмо' },
+  llm: { en: 'Reworded by the AI', uz: 'SI qayta ifodalagan', ru: 'Переформулировано ИИ' },
 }
 
-export const DECIDED: Record<DecisionAction, string> = {
-  CONFIRM: 'Confirmed',
-  DISMISS: 'Dismissed',
-  CORRECT: 'Corrected',
+export const DECIDED: Record<DecisionAction, Words> = {
+  CONFIRM: { en: 'Confirmed', uz: 'Tasdiqlandi', ru: 'Подтверждено' },
+  DISMISS: { en: 'Dismissed', uz: 'Rad etildi', ru: 'Отклонено' },
+  CORRECT: { en: 'Corrected', uz: 'Tuzatildi', ru: 'Исправлено' },
+}
+
+export const INCIDENT_STATUS: Record<IncidentStatus, Words> = {
+  OPEN: { en: 'Open: waiting for a refund proposal', uz: 'Ochiq: qaytarish taklifi kutilmoqda', ru: 'Открыт: ждёт предложения о возврате' },
+  PROPOSED: { en: 'Refund proposed: waiting for approval', uz: 'Qaytarish taklif qilindi: tasdiq kutilmoqda', ru: 'Возврат предложен: ждёт утверждения' },
+  APPROVED: { en: 'Refund approved: customers not told yet', uz: 'Qaytarish tasdiqlandi: mijozlarga hali xabar berilmagan', ru: 'Возврат утверждён: клиенты ещё не уведомлены' },
+  NOTIFIED: { en: 'Every affected customer told', uz: 'Barcha zarar koʻrgan mijozlarga xabar berildi', ru: 'Все пострадавшие клиенты уведомлены' },
+}
+
+export const CHECK_TRIGGER: Record<CheckTrigger, Words> = {
+  START: { en: 'at start-up', uz: 'ishga tushganda', ru: 'при запуске' },
+  FIRST_USE: { en: 'at first use', uz: 'birinchi foydalanishda', ru: 'при первом использовании' },
+  DAILY: { en: 'daily check', uz: 'kunlik tekshiruv', ru: 'ежедневная проверка' },
+  AFTER_CHANGE: { en: 'after a change in the bank', uz: 'bankdagi oʻzgarishdan keyin', ru: 'после изменения в банке' },
+  BY_HAND: { en: 'started by a person', uz: 'xodim ishga tushirdi', ru: 'запущена вручную' },
+}
+
+/** The names of the bank's charges as the server sends them in English. */
+const CHARGE_NAMES: Record<string, Words> = {
+  'Late payment penalty': { en: 'Late payment penalty', uz: 'Kechikkan toʻlov uchun jarima', ru: 'Штраф за просрочку платежа' },
+  'Loan issuance fee': { en: 'Loan issuance fee', uz: 'Kredit rasmiylashtirish komissiyasi', ru: 'Комиссия за выдачу кредита' },
+  'Card reissue fee': { en: 'Card reissue fee', uz: 'Kartani qayta chiqarish komissiyasi', ru: 'Комиссия за перевыпуск карты' },
+}
+
+export function chargeName(name: string | null | undefined): Words | null {
+  if (!name) return null
+  return CHARGE_NAMES[name] ?? { en: name, uz: name, ru: name }
 }
 
 /** A legal text nobody has verified yet is shown as "To verify". */
-export function verified(text: string | null): string {
-  return text === null || text === TO_VERIFY ? 'To verify' : text
+export function verified(text: string | null): Words {
+  if (text === null || text === TO_VERIFY) return { en: 'To verify', uz: 'Tekshirilishi kerak', ru: 'Требует проверки' }
+  return { en: text, uz: text, ru: text }
 }

@@ -4,6 +4,7 @@ import { api } from '../api'
 import { Label, Loading, PageHead, Problem } from '../components/Parts'
 import { formatNumber } from '../format'
 import { useLoad } from '../hooks'
+import { tx, useLang } from '../i18n'
 import { useSession } from '../session'
 import type { LanguageScore, ScoreRow, Scoreboard as Board, Timings } from '../types'
 import { MISTAKE, READ_BY } from '../words'
@@ -62,7 +63,7 @@ function PerType({ board }: { board: Board }) {
             {board.per_type.map((row, index) => (
               <tr key={row.type} className={`border-line border-t ${index % 2 ? 'bg-stripe' : ''}`}>
                 <th scope="row" className="px-3 py-2 text-left font-normal">
-                  {MISTAKE[row.type]}
+                  {tx(MISTAKE[row.type])}
                   {row.type === 'EARLY_DEBIT' && (
                     <span className="text-ink-soft text-small block">soʻm taken early, not money to return</span>
                   )}
@@ -103,7 +104,7 @@ function Language({ scores }: { scores: LanguageScore[] }) {
         <ul className="space-y-1">
           {scores.map((score) => (
             <li key={score.mode}>
-              Read by {READ_BY[score.mode]}: the kind of complaint was right for {score.type_correct} of {score.n},
+              Read by {tx(READ_BY[score.mode])}: the kind of complaint was right for {score.type_correct} of {score.n},
               the amount for {score.amount_correct} of {score.n}.
             </li>
           ))}
@@ -139,6 +140,7 @@ function Speed({ timings }: { timings: Timings }) {
 }
 
 export default function Scoreboard() {
+  useLang() // draw again when the language changes
   const { worldId, worlds } = useSession()
   const { state, reload } = useLoad(() => api.scoreboard(worldId), [worldId])
   const world = worlds?.find((item) => item.world_id === worldId)

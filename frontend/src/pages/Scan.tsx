@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 
 import { api } from '../api'
+import { tx, useLang } from '../i18n'
 import { Mark } from '../components/Marks'
 import { Button, Empty, Label, Loading, PageHead, Problem } from '../components/Parts'
 import { count, formatNumber, formatShare } from '../format'
@@ -242,7 +243,7 @@ function ScanView({ findingId }: { findingId: string }) {
   return (
     <div className="space-y-6">
       <p className="text-ink-soft text-small -mt-4">
-        Mistake: {MISTAKE[result.finding_type]} · found in {(result.elapsed_ms / 1000).toFixed(1)} s ·{' '}
+        Mistake: {tx(MISTAKE[result.finding_type])} · found in {(result.elapsed_ms / 1000).toFixed(1)} s ·{' '}
         on {count(result.affected_contracts, 'loan')}
       </p>
       <Headline result={result} />
@@ -254,6 +255,7 @@ function ScanView({ findingId }: { findingId: string }) {
 }
 
 export default function Scan() {
+  useLang() // draw again when the language changes
   const { findingId } = useParams()
   return (
     <>

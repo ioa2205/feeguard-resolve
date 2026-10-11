@@ -7,6 +7,7 @@ import { CustomerPicker } from '../components/CustomerPicker'
 import { Button, Label, Loading, PageHead, Problem } from '../components/Parts'
 import { count, formatDate, formatDateTime, formatNumber, formatSom } from '../format'
 import { useLoad } from '../hooks'
+import { tx, useLang } from '../i18n'
 import { useSession } from '../session'
 import type { Customer, DefectType, Preset, Reveal, TamperResult, World, WorldSize } from '../types'
 import { DEFAULT_WORLD_ID } from '../types'
@@ -121,12 +122,12 @@ function Build() {
             <label className="flex min-h-10 w-64 items-center gap-2">
               <input type="checkbox" disabled={surprise} checked={chosen[type]}
                 onChange={(event) => setChosen({ ...chosen, [type]: event.target.checked })} />
-              {MISTAKE[type]}
+              {tx(MISTAKE[type])}
             </label>
             <label className="flex items-center gap-2">
               <input type="number" min={0.5} max={3} step={0.5} disabled={surprise || !chosen[type]} value={rates[type]}
                 onChange={(event) => setRates({ ...rates, [type]: Number(event.target.value) })}
-                className={`${FIELD} w-20`} aria-label={`${MISTAKE[type]}, per cent of loans`} />
+                className={`${FIELD} w-20`} aria-label={`${tx(MISTAKE[type])}, per cent of loans`} />
               % of loans
             </label>
           </div>
@@ -247,7 +248,7 @@ function PublicCases() {
             <p role="status" className="border-stamp rounded-sheet border-2 p-3">
               This public case is now the open demo bank. Open the{' '}
               <Link to="/" className="text-stamp underline">Complaints</Link> screen, check a complaint about “
-              {MISTAKE[preset.mistake].toLowerCase()}”, then press Find others.
+              {tx(MISTAKE[preset.mistake]).toLowerCase()}”, then press Find others.
             </p>
           )}
         </div>
@@ -363,13 +364,13 @@ function settingLines(settings: Record<string, unknown>): string[] {
   const lines = []
   const defects = settings.defects as Record<string, number> | undefined
   if (defects) {
-    const hidden = Object.entries(defects).map(([type, rate]) => `${MISTAKE[type as DefectType] ?? type} ${Math.round(rate * 1000) / 10}%`)
+    const hidden = Object.entries(defects).map(([type, rate]) => `${tx(MISTAKE[type as DefectType]) ?? type} ${Math.round(rate * 1000) / 10}%`)
     lines.push(`Mistakes hidden: ${hidden.join(', ') || 'none'}${settings.surprise ? ' (chosen by surprise)' : ''}.`)
   }
   const causes = settings.hidden as Record<string, Record<string, unknown>> | undefined
   for (const [type, detail] of Object.entries(causes ?? {})) {
     const facts = Object.entries(detail).map(([key, value]) => `${key.replace(/_/g, ' ')}: ${Array.isArray(value) ? value.join(', ') : String(value)}`)
-    lines.push(`${MISTAKE[type as DefectType] ?? type}, hidden cause: ${facts.join('; ')}.`)
+    lines.push(`${tx(MISTAKE[type as DefectType]) ?? type}, hidden cause: ${facts.join('; ')}.`)
   }
   lines.push(`World date ${String(settings.as_of_date)} · ${String(settings.traps)} look-alike complaints asked · ${Math.round(Number(settings.complaint_rate) * 100)}% of wronged customers complain.`)
   return lines
@@ -428,7 +429,7 @@ function AnswerKey() {
               <tbody>
                 {key.counts.map((row, index) => (
                   <tr key={`${row.defect_type}-${row.is_trap}`} className={`border-line border-t ${index % 2 ? 'bg-stripe' : ''}`}>
-                    <td className="px-3 py-2">{MISTAKE[row.defect_type]}</td>
+                    <td className="px-3 py-2">{tx(MISTAKE[row.defect_type])}</td>
                     <td className="px-3 py-2">{row.is_trap ? 'Look-alike case (bank was right)' : 'Real mistake'}</td>
                     <td className="px-3 py-2 text-right tabular-nums">{formatNumber(row.count)}</td>
                     <td className="px-3 py-2 text-right tabular-nums">{formatNumber(row.amount)}</td>
@@ -453,7 +454,7 @@ function AnswerKey() {
                 {rows.map((row, index) => (
                   <tr key={row.id} className={`border-line border-t ${index % 2 ? 'bg-stripe' : ''}`}>
                     <td className="px-3 py-2">{row.id}</td>
-                    <td className="px-3 py-2">{MISTAKE[row.defect_type]}{row.is_trap && ', look-alike'}</td>
+                    <td className="px-3 py-2">{tx(MISTAKE[row.defect_type])}{row.is_trap && ', look-alike'}</td>
                     <td className="px-3 py-2">{row.contract_id}</td>
                     <td className="px-3 py-2">{row.installment_n === null ? 'None: a one-time fee' : `No. ${row.installment_n}`}</td>
                     <td className="px-3 py-2 text-right tabular-nums">{formatNumber(row.excess_amount)}</td>
@@ -478,6 +479,7 @@ function AnswerKey() {
 }
 
 export default function JuryPanel() {
+  useLang() // draw again when the language changes
   const { worldId } = useSession()
   return (
     <>

@@ -4,6 +4,8 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 
+import { setFormatLang } from './format'
+
 export type UiLang = 'en' | 'uz' | 'ru'
 export type Words = Record<UiLang, string>
 
@@ -14,11 +16,23 @@ export const UI_LANGS: { code: UiLang; label: string; attr: string }[] = [
 ]
 const KEY = 'feeguard.ui-lang'
 
+let current: UiLang = 'en'
+
+/** The text in the screen's language, for code outside a component. A page that uses it calls
+ * useLang() too, so it draws again when the language changes. */
+export function tx(words: Words): string
+export function tx(words: Words | undefined): string | undefined
+export function tx(words: Words | undefined): string | undefined {
+  return words ? words[current] : undefined
+}
+
 interface Lang {
   ui: UiLang
   setUi: (next: UiLang) => void
   /** The text in the chosen language. */
   t: (words: Words) => string
+  /** A sentence the server wrote: its translation when it sent one, else the plain text. */
+  say: (text: string | null | undefined, words?: Words | null) => string
 }
 
 const LangContext = createContext<Lang | null>(null)
@@ -46,8 +60,11 @@ export function LangProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     document.documentElement.lang = UI_LANGS.find((item) => item.code === ui)?.attr ?? 'en'
   }, [ui])
+  setFormatLang(ui) // before the screens below draw their dates and amounts
+  current = ui
   const t = useCallback((words: Words) => words[ui], [ui])
-  const value = useMemo(() => ({ ui, setUi, t }), [ui, setUi, t])
+  const say = useCallback((text: string | null | undefined, words?: Words | null) => (words ? words[ui] : text ?? ''), [ui])
+  const value = useMemo(() => ({ ui, setUi, t, say }), [ui, setUi, t, say])
   return <LangContext.Provider value={value}>{children}</LangContext.Provider>
 }
 

@@ -1,0 +1,152 @@
+{
+  "items": [
+    {
+      "incident_id": "INC-DOUBLE-DEBIT",
+      "finding_type": "DOUBLE_DEBIT",
+      "status": "OPEN",
+      "opened_at": "2026-10-11T12:18:42",
+      "opened_by_run": "CR-0001",
+      "opened_by": "START",
+      "customers": 397,
+      "contracts": 400,
+      "complained": 62,
+      "silent": 335,
+      "total_excess": 1011781585,
+      "total_affected": 1011781585,
+      "cause": {
+        "attributes": [
+          {
+            "name": "batch_run",
+            "value": "BR-2026-07-05",
+            "support": 0.93,
+            "lift": 46.97
+          },
+          {
+            "name": "cards",
+            "value": "2 or more",
+            "support": 1.0,
+            "lift": 4.04
+          }
+        ],
+        "sentence": "93% of the 400 installments taken twice came from billing run BR-2026-07-05, 47 times more often than normal. All of them belong to customers with 2 or more cards, 4 times more often than normal.",
+        "suggested_fix": "Before the billing run retries on another card, check the final status of the first debit. Give every installment an idempotency key, so one billing run can collect it only once."
+      },
+      "complaints_checked": 2,
+      "proposed_by": null,
+      "proposed_at": null,
+      "approved_by": null,
+      "approved_at": null,
+      "approved_customers": 0,
+      "notified_customers": 0,
+      "waiting_customers": 397
+    },
+    {
+      "incident_id": "INC-EARLY-DEBIT",
+      "finding_type": "EARLY_DEBIT",
+      "status": "OPEN",
+      "opened_at": "2026-10-11T12:18:42",
+      "opened_by_run": "CR-0001",
+      "opened_by": "START",
+      "customers": 400,
+      "contracts": 400,
+      "complained": 72,
+      "silent": 328,
+      "total_excess": 0,
+      "total_affected": 3909382499,
+      "cause": {
+        "attributes": [
+          {
+            "name": "schedule",
+            "value": "changed",
+            "support": 1.0,
+            "lift": 11.07
+          }
+        ],
+        "sentence": "All 1523 debits taken early are on loans whose payment schedule was changed, 11 times more often than normal.",
+        "suggested_fix": "When a payment schedule changes, rebuild the automatic debit plan from the new schedule. Block any automatic debit before the due date unless the customer asked for early repayment."
+      },
+      "complaints_checked": 0,
+      "proposed_by": null,
+      "proposed_at": null,
+      "approved_by": null,
+      "approved_at": null,
+      "approved_customers": 0,
+      "notified_customers": 0,
+      "waiting_customers": 400
+    },
+    {
+      "incident_id": "INC-ILLEGAL-FEE",
+      "finding_type": "ILLEGAL_FEE",
+      "status": "OPEN",
+      "opened_at": "2026-10-11T12:18:42",
+      "opened_by_run": "CR-0001",
+      "opened_by": "START",
+      "customers": 440,
+      "contracts": 440,
+      "complained": 80,
+      "silent": 360,
+      "total_excess": 51280000,
+      "total_affected": 51280000,
+      "cause": {
+        "attributes": [
+          {
+            "name": "tariff",
+            "value": "version 2",
+            "support": 1.0,
+            "lift": 45.45
+          },
+          {
+            "name": "product",
+            "value": "Microloan",
+            "support": 1.0,
+            "lift": 4.46
+          }
+        ],
+        "sentence": "All 440 fees not in the contract are on loans signed under tariff version 2, 45 times more often than normal. All of them are on Microloan contracts, 4.5 times more often than normal.",
+        "suggested_fix": "Remove this fee from the new tariff and return it to every customer who paid it. Check every tariff change against the contract wording and the law before it goes live."
+      },
+      "complaints_checked": 0,
+      "proposed_by": null,
+      "proposed_at": null,
+      "approved_by": null,
+      "approved_at": null,
+      "approved_customers": 0,
+      "notified_customers": 0,
+      "waiting_customers": 440
+    },
+    {
+      "incident_id": "INC-LATE-POSTING",
+      "finding_type": "LATE_POSTING",
+      "status": "OPEN",
+      "opened_at": "2026-10-11T12:18:42",
+      "opened_by_run": "CR-0001",
+      "opened_by": "START",
+      "customers": 400,
+      "contracts": 400,
+      "complained": 62,
+      "silent": 338,
+      "total_excess": 1708980,
+      "total_affected": 1708980,
+      "cause": {
+        "attributes": [
+          {
+            "name": "channel",
+            "value": "PAYNET",
+            "support": 1.0,
+            "lift": 6.5
+          }
+        ],
+        "sentence": "All 469 penalties for payments recorded late were paid through PAYNET, 6.5 times more often than normal.",
+        "suggested_fix": "Record payments from this channel with the day the customer paid, not the day the bank processed the file. Charge no penalty until the channel's payments of the due date are recorded."
+      },
+      "complaints_checked": 0,
+      "proposed_by": null,
+      "proposed_at": null,
+      "approved_by": null,
+      "approved_at": null,
+      "approved_customers": 0,
+      "notified_customers": 0,
+      "waiting_customers": 400
+    }
+  ]
+}

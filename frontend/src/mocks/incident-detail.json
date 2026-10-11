@@ -1,0 +1,128 @@
+{
+  "incident": {
+    "incident_id": "INC-DOUBLE-DEBIT",
+    "finding_type": "DOUBLE_DEBIT",
+    "status": "OPEN",
+    "opened_at": "2026-10-11T12:18:42",
+    "opened_by_run": "CR-0001",
+    "opened_by": "START",
+    "customers": 397,
+    "contracts": 400,
+    "complained": 62,
+    "silent": 335,
+    "total_excess": 1011781585,
+    "total_affected": 1011781585,
+    "cause": {
+      "attributes": [
+        {
+          "name": "batch_run",
+          "value": "BR-2026-07-05",
+          "support": 0.93,
+          "lift": 46.97
+        },
+        {
+          "name": "cards",
+          "value": "2 or more",
+          "support": 1.0,
+          "lift": 4.04
+        }
+      ],
+      "sentence": "93% of the 400 installments taken twice came from billing run BR-2026-07-05, 47 times more often than normal. All of them belong to customers with 2 or more cards, 4 times more often than normal.",
+      "suggested_fix": "Before the billing run retries on another card, check the final status of the first debit. Give every installment an idempotency key, so one billing run can collect it only once."
+    },
+    "complaints_checked": 2,
+    "proposed_by": null,
+    "proposed_at": null,
+    "approved_by": null,
+    "approved_at": null,
+    "approved_customers": 0,
+    "notified_customers": 0,
+    "waiting_customers": 397
+  },
+  "customers": [
+    {
+      "customer_id": "CU-00146",
+      "customer_name": "Sanjar Sultonov",
+      "region": "Toshkent shahri",
+      "contracts": [
+        "L-00170"
+      ],
+      "amount_excess": 609000,
+      "amount_affected": 609000,
+      "complained": true,
+      "complaint_id": "C-0049",
+      "approved": false,
+      "notified": false
+    },
+    {
+      "customer_id": "CU-00261",
+      "customer_name": "Iroda Gʻaniyeva",
+      "region": "Jizzax viloyati",
+      "contracts": [
+        "L-00299"
+      ],
+      "amount_excess": 1738000,
+      "amount_affected": 1738000,
+      "complained": true,
+      "complaint_id": "C-0067",
+      "approved": false,
+      "notified": false
+    },
+    {
+      "customer_id": "CU-00541",
+      "customer_name": "Doston Xoʻjayev",
+      "region": "Andijon viloyati",
+      "contracts": [
+        "L-00605"
+      ],
+      "amount_excess": 2558000,
+      "amount_affected": 2558000,
+      "complained": true,
+      "complaint_id": "C-0066",
+      "approved": false,
+      "notified": false
+    },
+    {
+      "customer_id": "CU-00010",
+      "customer_name": "Sherzod Mamatov",
+      "region": "Samarqand viloyati",
+      "contracts": [
+        "L-00013"
+      ],
+      "amount_excess": 1291000,
+      "amount_affected": 1291000,
+      "complained": false,
+      "complaint_id": null,
+      "approved": false,
+      "notified": false
+    },
+    {
+      "customer_id": "CU-00075",
+      "customer_name": "Charos Gʻaniyeva",
+      "region": "Toshkent viloyati",
+      "contracts": [
+        "L-00086"
+      ],
+      "amount_excess": 6196000,
+      "amount_affected": 6196000,
+      "complained": false,
+      "complaint_id": null,
+      "approved": false,
+      "notified": false
+    },
+    {
+      "customer_id": "CU-00107",
+      "customer_name": "Feruza Boboyeva",
+      "region": "Sirdaryo viloyati",
+      "contracts": [
+        "L-00121"
+      ],
+      "amount_excess": 5657000,
+      "amount_affected": 5657000,
+      "complained": false,
+      "complaint_id": null,
+      "approved": false,
+      "notified": false
+    }
+  ]
+}

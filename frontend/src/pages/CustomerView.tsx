@@ -12,27 +12,36 @@ import { useLang } from '../i18n'
 import { useSession } from '../session'
 import type { CustomerStatement, StatementMessage } from '../types'
 import { MAX_TEXT } from '../types'
-import { PAID_BY } from '../words'
+import type { Words } from '../i18n'
+import { chargeName, LANG_ATTR, MISTAKE, PAID_BY } from '../words'
 
 // A customer's phone (DESIGN section 7.4): the bank messages one customer received,
 // oldest first, as plain lines. Below them a text box and "Send complaint". No drawing
 // of a phone. This is the Sandbox Bank: it stores the complaint, FeeGuard only reads it.
 
-function line(message: StatementMessage): string {
+function line(message: StatementMessage, t: (words: Words) => string): string {
   const amount = formatSom(message.amount)
+  const card = message.card ?? ''
+  const name = chargeName(message.charge_name)
   switch (message.kind) {
     case 'DEBIT':
-      return `Taken from card ${message.card ?? ''}: ${amount}.`
+      return t({ en: `Taken from card ${card}: ${amount}.`, uz: `${card} kartadan yechildi: ${amount}.`, ru: `Списано с карты ${card}: ${amount}.` })
     case 'DEBIT_FAILED':
-      return `A debit of ${amount} from card ${message.card ?? ''} failed. Nothing was taken.`
+      return t({ en: `A debit of ${amount} from card ${card} failed. Nothing was taken.`, uz: `${card} kartadan ${amount} yechish amalga oshmadi. Hech narsa yechilmadi.`, ru: `Списание ${amount} с карты ${card} не прошло. Ничего не списано.` })
     case 'REVERSAL':
-      return `Returned to card ${message.card ?? ''}: ${amount}.`
-    case 'PAYMENT':
-      return `Payment received through ${message.channel ? PAID_BY[message.channel] : 'another channel'}: ${amount}.`
+      return t({ en: `Returned to card ${card}: ${amount}.`, uz: `${card} kartaga qaytarildi: ${amount}.`, ru: `Возвращено на карту ${card}: ${amount}.` })
+    case 'PAYMENT': {
+      const channel = message.channel ? t(PAID_BY[message.channel]) : t({ en: 'another channel', uz: 'boshqa kanal', ru: 'другой канал' })
+      return t({ en: `Payment received through ${channel}: ${amount}.`, uz: `${channel} orqali toʻlov qabul qilindi: ${amount}.`, ru: `Платёж получен через ${channel}: ${amount}.` })
+    }
     case 'PENALTY':
-      return `Penalty charged: ${message.charge_name ?? 'penalty'}, ${amount}.`
+      return t({ en: `Penalty charged: ${name ? name.en : 'penalty'}, ${amount}.`, uz: `Jarima undirildi: ${name ? name.uz : 'jarima'}, ${amount}.`, ru: `Начислен штраф: ${name ? name.ru : 'штраф'}, ${amount}.` })
     case 'FEE':
-      return `Fee charged: ${message.charge_name ?? 'fee'}, ${amount}.`
+      return t({ en: `Fee charged: ${name ? name.en : 'fee'}, ${amount}.`, uz: `Komissiya undirildi: ${name ? name.uz : 'komissiya'}, ${amount}.`, ru: `Взята комиссия: ${name ? name.ru : 'комиссия'}, ${amount}.` })
+    case 'NOTICE': {
+      const mistake = message.finding_type ? t(MISTAKE[message.finding_type]).toLowerCase() : ''
+      return t({ en: `Message from the bank, found by FeeGuard without a complaint (${mistake}, ${amount}):`, uz: `Bankdan xabar, FeeGuard shikoyatsiz topgan (${mistake}, ${amount}):`, ru: `Сообщение банка, FeeGuard нашёл без жалобы (${mistake}, ${amount}):` })
+    }
   }
 }
 
@@ -48,15 +57,20 @@ function Messages({ statement }: { statement: CustomerStatement }) {
     <section>
       <h2 className="border-ink mb-2 border-b-2 pb-1"><Label>{t({ en: 'Messages from the bank, oldest first', uz: 'Bankdan kelgan xabarlar, eskisi birinchi', ru: 'Сообщения банка, сначала старые' })}</Label></h2>
       {statement.messages.length === 0 ? (
-        <p>The bank has sent this customer no message yet.</p>
+        <p>{t({ en: 'The bank has sent this customer no message yet.', uz: 'Bank bu mijozga hali xabar yubormagan.', ru: 'Банк ещё не отправлял этому клиенту сообщений.' })}</p>
       ) : (
-        <ol ref={box} tabIndex={0} aria-label="Messages from the bank"
+        <ol ref={box} tabIndex={0} aria-label={t({ en: 'Messages from the bank', uz: 'Bankdan xabarlar', ru: 'Сообщения банка' })}
           className="border-line bg-sheet rounded-sheet max-h-[28rem] overflow-y-auto border">
           {statement.messages.map((message, index) => (
             <li key={index} className={`border-line border-t px-3 py-2 first:border-t-0 ${index % 2 ? 'bg-stripe' : ''}`}>
               <span className="text-ink-soft text-small mr-2 whitespace-nowrap">{formatDateTime(message.at)}</span>
-              {line(message)}{' '}
-              <span className="text-ink-soft text-small whitespace-nowrap">Loan {message.contract_id}</span>
+              {message.kind === 'NOTICE' ? <strong>{line(message, t)}</strong> : line(message, t)}{' '}
+              <span className="text-ink-soft text-small whitespace-nowrap">{t({ en: 'Loan', uz: 'Kredit', ru: 'Кредит' })} {message.contract_id}</span>
+              {message.kind === 'NOTICE' && message.text && (
+                <blockquote lang={message.text_lang ? LANG_ATTR[message.text_lang] : undefined} className="border-stamp text-words mt-1 border-l-4 pl-3 font-serif">
+                  {message.text}
+                </blockquote>
+              )}
             </li>
           ))}
         </ol>
@@ -125,6 +139,7 @@ function Write({ customerId }: { customerId: string }) {
 }
 
 function Phone({ customerId }: { customerId: string }) {
+  const { t } = useLang()
   const { state, reload } = useLoad(() => api.statement(customerId), [customerId])
   if (state.status === 'loading') return <Loading lines={6} />
   if (state.status === 'error') return <Problem error={state.error} onRetry={reload} />
@@ -134,17 +149,17 @@ function Phone({ customerId }: { customerId: string }) {
       <section className="max-w-[90ch] space-y-1">
         <h2 className="font-condensed text-stamp-text font-semibold">{customer.full_name}</h2>
         <p className="text-ink-soft text-small">
-          Customer {customer.customer_id} · {customer.region} · phone {customer.phone_masked}
+          {t({ en: 'Customer', uz: 'Mijoz', ru: 'Клиент' })} {customer.customer_id} · {customer.region} · {t({ en: 'phone', uz: 'telefon', ru: 'телефон' })} {customer.phone_masked}
         </p>
         <p>
-          <strong>Cards:</strong>{' '}
-          {cards.map((card) => `${card.label}${card.is_primary ? ' (main)' : ''}`).join(', ') || 'none'}
+          <strong>{t({ en: 'Cards:', uz: 'Kartalar:', ru: 'Карты:' })}</strong>{' '}
+          {cards.map((card) => `${card.label}${card.is_primary ? t({ en: ' (main)', uz: ' (asosiy)', ru: ' (основная)' }) : ''}`).join(', ') || '—'}
         </p>
         <ul>
           {contracts.map((contract) => (
             <li key={contract.contract_id}>
-              <strong>Loan {contract.contract_id}:</strong> {contract.product_name}, {formatSom(contract.monthly_payment)} a
-              month, due on day {contract.due_day} of each month.
+              <strong>{t({ en: 'Loan', uz: 'Kredit', ru: 'Кредит' })} {contract.contract_id}:</strong> {contract.product_name},{' '}
+              {t({ en: `${formatSom(contract.monthly_payment)} a month, due on day ${contract.due_day} of each month.`, uz: `oyiga ${formatSom(contract.monthly_payment)}, har oyning ${contract.due_day}-kuni.`, ru: `${formatSom(contract.monthly_payment)} в месяц, платёж ${contract.due_day}-го числа.` })}
             </li>
           ))}
         </ul>

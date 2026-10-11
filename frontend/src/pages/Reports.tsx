@@ -5,6 +5,8 @@ import { api } from '../api'
 import { Button, Empty, Label, Loading, PageHead, Problem } from '../components/Parts'
 import { formatDate, formatNumber, formatSom } from '../format'
 import { useLoad } from '../hooks'
+import { tx, useLang } from '../i18n'
+import type { Words } from '../i18n'
 import { useSession } from '../session'
 import type { ActionPlanRow, ActionPlanUpdate, ClaimType, ComplaintChannel, CountRow, QuarterlyReport, Verdict } from '../types'
 import { CLAIM, MISTAKE, RECEIVED_BY, VERDICT, verified } from '../words'
@@ -48,7 +50,7 @@ function PlanRow({ number, row, onSaved }: { number: number; row: ActionPlanRow;
     <tr className="border-line border-t align-top break-inside-avoid">
       <td className="px-2 py-2 tabular-nums">{number}</td>
       <td className="px-2 py-2">
-        <span className="text-small block font-semibold">{MISTAKE[row.finding_type]}</span>
+        <span className="text-small block font-semibold">{tx(MISTAKE[row.finding_type])}</span>
         <textarea aria-label={label('Deficiency')} rows={6} className={FIELD} value={draft.deficiency}
           maxLength={2000} onChange={(event) => set('deficiency', event.target.value)} />
         <span className="hidden print:block">{draft.deficiency}</span>
@@ -111,7 +113,7 @@ function Plan({ onApproved }: { onApproved: (approved: boolean) => void }) {
     <section className="space-y-3">
       <h2 className="font-condensed text-stamp-text font-semibold">Plan of measures to remove the deficiencies</h2>
       <p className="text-small max-w-[90ch]">
-        Annex 5 of Rule 3030-12. Column list: {verified(plan.format_basis).toLowerCase()} against the Central Bank&apos;s
+        Annex 5 of Rule 3030-12. Column list: {tx(verified(plan.format_basis)).toLowerCase()} against the Central Bank&apos;s
         text. A row is drafted when a person confirms a mistake on a complaint; its numbers come from the search over
         the whole bank. Deadlines and the responsible person are left for a person to fill in.
       </p>
@@ -148,7 +150,10 @@ function Plan({ onApproved }: { onApproved: (approved: boolean) => void }) {
   )
 }
 
-const VERDICT_OR_NOT: Record<string, string> = { ...VERDICT, NOT_CHECKED: 'Not checked yet' }
+const VERDICT_OR_NOT: Record<string, Words> = {
+  ...VERDICT,
+  NOT_CHECKED: { en: 'Not checked yet', uz: 'Hali tekshirilmagan', ru: 'Ещё не проверена' },
+}
 
 function Counts({ title, rows, word }: { title: string; rows: CountRow[]; word: (key: string) => string }) {
   return (
@@ -189,13 +194,13 @@ function Quarterly() {
       <h2 className="font-condensed text-stamp-text font-semibold">Quarterly analysis of complaints</h2>
       <p className="max-w-[70ch]">
         {quarterName(report)}. <strong>{formatNumber(report.complaints_total)}</strong> complaints about loan payments
-        were received. The form of this analysis is {verified(null).toLowerCase()} against the Central Bank&apos;s text.
+        were received. The form of this analysis is {tx(verified(null)).toLowerCase()} against the Central Bank&apos;s text.
       </p>
       <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
-        <Counts title="By kind, as read" rows={report.by_type} word={(key) => CLAIM[key as ClaimType] ?? key} />
-        <Counts title="By verdict" rows={report.by_verdict} word={(key) => VERDICT_OR_NOT[key as Verdict] ?? key} />
+        <Counts title="By kind, as read" rows={report.by_type} word={(key) => tx(CLAIM[key as ClaimType]) ?? key} />
+        <Counts title="By verdict" rows={report.by_verdict} word={(key) => tx(VERDICT_OR_NOT[key as Verdict]) ?? key} />
         <Counts title="By region" rows={report.by_region} word={(key) => key} />
-        <Counts title="By channel" rows={report.by_channel} word={(key) => RECEIVED_BY[key as ComplaintChannel] ?? key} />
+        <Counts title="By channel" rows={report.by_channel} word={(key) => tx(RECEIVED_BY[key as ComplaintChannel]) ?? key} />
       </div>
       <p className="text-small max-w-[90ch]">
         A complaint nobody has checked yet is counted by the rules reader&apos;s reading of its text.
@@ -208,7 +213,7 @@ function Quarterly() {
         <ul className="max-w-[90ch] space-y-3">
           {report.recurring.map((issue) => (
             <li key={issue.finding_type} className="break-inside-avoid">
-              <strong>{MISTAKE[issue.finding_type]}:</strong> {formatNumber(issue.affected_customers)} customers on{' '}
+              <strong>{tx(MISTAKE[issue.finding_type])}:</strong> {formatNumber(issue.affected_customers)} customers on{' '}
               {formatNumber(issue.affected_contracts)} loans,{' '}
               {issue.finding_type === 'EARLY_DEBIT'
                 ? `${formatSom(issue.total_affected)} taken early.`
@@ -232,6 +237,7 @@ function Quarterly() {
 }
 
 export default function Reports() {
+  useLang() // draw again when the language changes
   const { worldId } = useSession()
   const [approved, setApproved] = useState(false)
   return (

@@ -5,6 +5,7 @@ import { Mark } from '../components/Marks'
 import { Button, Empty, Label, Loading, PageHead, Problem } from '../components/Parts'
 import { count, formatDateTime, formatSom } from '../format'
 import { useLoad } from '../hooks'
+import { tx, useLang } from '../i18n'
 import { useSession } from '../session'
 import type { AuditEntry, AuditLog, DefectType, Verdict } from '../types'
 import { ACTING_AS, MISTAKE, VERDICT } from '../words'
@@ -31,8 +32,8 @@ const WHAT: Record<string, string> = {
 
 const text = (value: unknown) => String(value ?? '')
 const money = (value: unknown) => (typeof value === 'number' ? formatSom(value) : text(value))
-const verdict = (value: unknown) => VERDICT[value as Verdict] ?? text(value)
-const mistake = (value: unknown) => MISTAKE[value as DefectType] ?? text(value)
+const verdict = (value: unknown) => tx(VERDICT[value as Verdict]) ?? text(value)
+const mistake = (value: unknown) => tx(MISTAKE[value as DefectType]) ?? text(value)
 
 /** The entry's facts in a short sentence. An action the screen does not know shows its fields. */
 function details(entry: AuditEntry): string {
@@ -83,6 +84,7 @@ function ChainStamp({ log }: { log: AuditLog }) {
 }
 
 export default function Audit() {
+  useLang() // draw again when the language changes
   const { worldId } = useSession()
   const { state, reload } = useLoad(() => api.audit(PAGE, 0), [worldId])
   const [more, setMore] = useState<AuditEntry[]>([])
@@ -147,7 +149,7 @@ export default function Audit() {
                         return (
                           <tr key={entry.id} className={`border-line border-t align-top ${index % 2 ? 'bg-stripe' : ''}`}>
                             <td className="px-3 py-2 whitespace-nowrap">{formatDateTime(entry.at)}</td>
-                            <td className="px-3 py-2 whitespace-nowrap">{ACTING_AS[entry.actor] ?? entry.actor}</td>
+                            <td className="px-3 py-2 whitespace-nowrap">{tx(ACTING_AS[entry.actor]) ?? entry.actor}</td>
                             <td className="px-3 py-2">{WHAT[entry.action] ?? entry.action}</td>
                             <td className="px-3 py-2">{details(entry)}</td>
                             <td className="px-3 py-2 whitespace-nowrap">

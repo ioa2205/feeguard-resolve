@@ -11,6 +11,8 @@ import type {
   ActionPlanUpdate,
   AuditLog,
   CaseResult,
+  CheckRun,
+  CheckRunList,
   ComplaintCreate,
   ComplaintCreated,
   ComplaintList,
@@ -21,6 +23,8 @@ import type {
   DraftReply,
   ErrorResponse,
   Health,
+  IncidentDetail,
+  IncidentList,
   PresetList,
   QuarterlyReport,
   Reveal,
@@ -38,6 +42,8 @@ import actionPlan from './action-plan.json'
 import audit from './audit.json'
 import caseNotSupported from './case-not-supported.json'
 import caseSupported from './case-supported.json'
+import checkRun from './check-run.json'
+import checks from './checks.json'
 import complaintCreated from './complaint-created.json'
 import complaints from './complaints.json'
 import customers from './customers.json'
@@ -45,6 +51,8 @@ import decision from './decision.json'
 import draftReply from './draft-reply.json'
 import error from './error.json'
 import health from './health.json'
+import incidentDetail from './incident-detail.json'
+import incidents from './incidents.json'
 import presets from './presets.json'
 import quarterly from './quarterly.json'
 import reqActionPlanUpdate from './req-action-plan-update.json'
@@ -85,6 +93,8 @@ export const mocks = {
   audit: typed<AuditLog>(audit),
   caseNotSupported: typed<CaseResult>(caseNotSupported),
   caseSupported: typed<CaseResult>(caseSupported),
+  checkRun: typed<CheckRun>(checkRun),
+  checks: typed<CheckRunList>(checks),
   complaintCreated: typed<ComplaintCreated>(complaintCreated),
   complaints: typed<ComplaintList>(complaints),
   customers: typed<CustomerList>(customers),
@@ -92,6 +102,8 @@ export const mocks = {
   draftReply: typed<DraftReply>(draftReply),
   error: typed<ErrorResponse>(error),
   health: typed<Health>(health),
+  incidentDetail: typed<IncidentDetail>(incidentDetail),
+  incidents: typed<IncidentList>(incidents),
   presets: typed<PresetList>(presets),
   quarterly: typed<QuarterlyReport>(quarterly),
   reqActionPlanUpdate: typed<ActionPlanUpdate>(reqActionPlanUpdate),

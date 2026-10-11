@@ -6,7 +6,9 @@
 // An event more than 6 days away sits at the end with its day count beside it.
 // The rail never carries the message alone: the row always has a sentence too.
 
-import { count } from '../format'
+import { DAY, countOf } from '../format'
+import { useLang } from '../i18n'
+import type { Words } from '../i18n'
 import type { TimelineEvent } from '../types'
 
 const SPAN = 6 // days shown on each side of the due date
@@ -17,23 +19,26 @@ const LINE_Y = 24
 const ABOVE_Y = 12
 const BELOW_Y = 36
 
-function where(offset: number): string {
-  if (offset === 0) return 'on the due date'
-  return `${count(Math.abs(offset), 'day')} ${offset < 0 ? 'before' : 'after'} the due date`
+function where(offset: number, t: (words: Words) => string): string {
+  if (offset === 0) return t({ en: 'on the due date', uz: 'toʻlov kuni', ru: 'в день платежа' })
+  const days = countOf(Math.abs(offset), DAY)
+  return offset < 0
+    ? t({ en: `${days} before the due date`, uz: `toʻlov kunidan ${days} oldin`, ru: `за ${days} до срока` })
+    : t({ en: `${days} after the due date`, uz: `toʻlov kunidan ${days} keyin`, ru: `через ${days} после срока` })
 }
 
-function spoken(event: TimelineEvent): string {
+function spoken(event: TimelineEvent, t: (words: Words) => string): string {
   const what =
     event.kind === 'TAKEN'
       ? event.debit_status === 'FAILED'
-        ? 'A debit failed'
+        ? t({ en: 'A debit failed', uz: 'Yechim amalga oshmadi', ru: 'Списание не прошло' })
         : event.debit_status === 'REVERSED'
-          ? 'A debit that was returned'
-          : 'Taken from card'
+          ? t({ en: 'A debit that was returned', uz: 'Qaytarilgan yechim', ru: 'Возвращённое списание' })
+          : t({ en: 'Taken from card', uz: 'Kartadan yechildi', ru: 'Списано с карты' })
       : event.kind === 'RECORDED'
-        ? 'Recorded on the loan'
-        : 'Charged'
-  return `${what} ${where(event.day_offset)}${event.wrong ? ', the mistake' : ''}`
+        ? t({ en: 'Recorded on the loan', uz: 'Kreditga qayd etildi', ru: 'Зачислено по кредиту' })
+        : t({ en: 'Charged', uz: 'Undirildi', ru: 'Начислено' })
+  return `${what} ${where(event.day_offset, t)}${event.wrong ? t({ en: ', the mistake', uz: ', xato', ru: ', ошибка' }) : ''}`
 }
 
 function shape(event: TimelineEvent, x: number) {
@@ -53,6 +58,7 @@ function shape(event: TimelineEvent, x: number) {
 }
 
 export function DayRail({ events }: { events: TimelineEvent[] }) {
+  const { t } = useLang()
   // Marks on the same day and the same side stand next to each other.
   const used = new Map<string, number>()
   const far = new Map<string, number>() // "above:1" -> the largest day count out there
@@ -78,7 +84,7 @@ export function DayRail({ events }: { events: TimelineEvent[] }) {
       width={WIDTH}
       height="48"
       role="img"
-      aria-label={events.length ? `${events.map(spoken).join('. ')}.` : 'Nothing happened.'}
+      aria-label={events.length ? `${events.map((event) => spoken(event, t)).join('. ')}.` : t({ en: 'Nothing happened.', uz: 'Hech narsa boʻlmadi.', ru: 'Ничего не произошло.' })}
       className="max-w-full shrink-0"
     >
       <line x1={SIDE} x2={WIDTH - SIDE} y1={LINE_Y} y2={LINE_Y} stroke="var(--ink-soft)" strokeWidth="1" />
@@ -110,7 +116,7 @@ export function DayRail({ events }: { events: TimelineEvent[] }) {
             fontSize="13"
             fill="var(--ink)"
           >
-            {days} days
+            {countOf(days, DAY)}
           </text>
         )
       })}

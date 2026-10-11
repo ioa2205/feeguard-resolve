@@ -46,10 +46,21 @@ export type ComplaintSource = 'GENERATED' | 'JURY'
 export type ComplaintStatus = 'NEW' | 'CHECKED' | 'CONFIRMED' | 'DISMISSED' | 'CORRECTED'
 export type DraftSource = 'template' | 'llm'
 export type PlanStatus = 'DRAFT' | 'APPROVED'
-export type MessageKind = 'DEBIT' | 'DEBIT_FAILED' | 'REVERSAL' | 'PAYMENT' | 'PENALTY' | 'FEE'
+export type MessageKind = 'DEBIT' | 'DEBIT_FAILED' | 'REVERSAL' | 'PAYMENT' | 'PENALTY' | 'FEE' | 'NOTICE'
+// How a check of the bank was started, and how much it read (DECISIONS D-039).
+export type CheckTrigger = 'START' | 'FIRST_USE' | 'DAILY' | 'AFTER_CHANGE' | 'BY_HAND'
+export type CheckScope = 'ALL' | 'CHANGED'
+export type IncidentStatus = 'OPEN' | 'PROPOSED' | 'APPROVED' | 'NOTIFIED'
 export type EventKind = 'TAKEN' | 'RECORDED' | 'CHARGED'
 export type EventDebitStatus = 'SUCCESS' | 'FAILED' | 'REVERSED'
 export type RowTreatment = 'CORRECT' | 'WRONG' | 'CHECKED_CORRECT' | 'TAKEN_EARLY'
+
+/** One sentence the server wrote, in the three languages of the screens (D-041). */
+export interface Words {
+  en: string
+  uz: string
+  ru: string
+}
 
 // --- Errors and health ---
 
@@ -232,6 +243,10 @@ export interface StatementMessage {
   channel: PaymentChannel | null
   charge_name: string | null
   amount: Som
+  /** NOTICE only: FeeGuard wrote it in the customer's language (D-040). */
+  finding_type?: DefectType | null
+  text?: string | null
+  text_lang?: LetterLang | null
 }
 
 export interface CustomerStatement {
@@ -314,6 +329,7 @@ export interface TimelineRow {
   finding_id: string | null
   cleared_reason: ClearedReason | null
   sentence: string | null
+  sentence_t?: Words | null
   not_owed: Som
   taken_early: Som
   days_early: number | null
@@ -331,6 +347,7 @@ export interface OtherCharge {
   finding_id: string | null
   cleared_reason: ClearedReason | null
   sentence: string | null
+  sentence_t?: Words | null
   not_owed: Som
 }
 
@@ -378,6 +395,7 @@ export interface Finding {
   amount_affected: Som
   days_early: number | null
   explanation: string
+  explanation_t?: Words | null
   /** A verified citation, `TO_VERIFY`, or null when no law is involved. */
   legal_basis: string | null
   evidence: Evidence
@@ -389,6 +407,7 @@ export interface Cleared {
   contract_id: string
   installment_n: number | null
   explanation: string
+  explanation_t?: Words | null
   evidence: Evidence
 }
 
@@ -432,6 +451,7 @@ export interface CaseResult {
   claim_match: boolean | null
   /** The "why" sentence under the verdict stamp. */
   verdict_reason: string
+  verdict_reason_t?: Words | null
   window: CheckedWindow
   findings: Finding[]
   cleared: Cleared[]
@@ -442,6 +462,8 @@ export interface CaseResult {
   decision: Decision | null
   audit_id: string
   elapsed_ms: number
+  /** The incident of each mistake type of this case (D-040). Empty when isolated. */
+  incidents?: IncidentLink[]
 }
 
 // --- Scan ("Find others") ---
@@ -457,6 +479,8 @@ export interface Cause {
   attributes: CauseAttribute[]
   sentence: string
   suggested_fix: string | null
+  sentence_t?: Words | null
+  suggested_fix_t?: Words | null
 }
 
 export interface ScanItem {
@@ -506,6 +530,10 @@ export interface ActionPlanRow {
   /** Set by a person, never by FeeGuard. */
   monitoring_deadline: Day | null
   status: PlanStatus
+  /** A draft only: what FeeGuard wrote, in three languages. A saved row keeps the person's words. */
+  deficiency_t?: Words | null
+  measures_t?: Words | null
+  responsible_unit_t?: Words | null
 }
 
 export interface ActionPlan {
@@ -529,6 +557,7 @@ export interface RecurringIssue {
   total_excess: Som
   total_affected: Som
   cause_sentence: string | null
+  cause_sentence_t?: Words | null
 }
 
 export interface QuarterlyReport {
@@ -630,4 +659,91 @@ export interface AuditLog {
   /** Newest first. */
   entries: AuditEntry[]
   total: number
+}
+
+// --- Checks of the whole bank and incidents (D-039, D-040) ---
+
+export interface CheckRun {
+  run_id: string
+  at: Moment
+  trigger: CheckTrigger
+  scope: CheckScope
+  loans_read: number
+  loans_total: number
+  new_findings: number
+  gone_findings: number
+  elapsed_ms: number
+  incidents_opened: string[]
+  incidents_grown: string[]
+}
+
+export interface CheckRunList {
+  /** Newest first. */
+  items: CheckRun[]
+  /** "02:30" Tashkent time; null when the daily check is off. */
+  daily_at: string | null
+  total: number
+}
+
+export interface Incident {
+  incident_id: string
+  finding_type: DefectType
+  status: IncidentStatus
+  opened_at: Moment
+  opened_by_run: string
+  opened_by: CheckTrigger
+  customers: number
+  contracts: number
+  /** Customers. */
+  complained: number
+  /** Customers. */
+  silent: number
+  total_excess: Som
+  total_affected: Som
+  cause: Cause | null
+  complaints_checked: number
+  proposed_by: Actor | null
+  proposed_at: Moment | null
+  approved_by: Actor | null
+  approved_at: Moment | null
+  approved_customers: number
+  notified_customers: number
+  waiting_customers: number
+}
+
+export interface IncidentList {
+  items: Incident[]
+}
+
+export interface IncidentCustomer {
+  customer_id: string
+  customer_name: string
+  region: string
+  contracts: string[]
+  amount_excess: Som
+  amount_affected: Som
+  complained: boolean
+  complaint_id: string | null
+  approved: boolean
+  notified: boolean
+}
+
+export interface IncidentDetail {
+  incident: Incident
+  customers: IncidentCustomer[]
+}
+
+export interface IncidentLink {
+  incident_id: string
+  finding_type: DefectType
+  status: IncidentStatus
+  /** The incident was open before this complaint was checked. */
+  known_before: boolean
+  opened_at: Moment
+  opened_by: CheckTrigger
+  customers: number
+  silent: number
+  total_excess: Som
+  cause_sentence: string | null
+  cause_sentence_t?: Words | null
 }

@@ -1,3 +1,5 @@
+import { useLang } from '../i18n'
+
 // The "Not built yet" sheet of DESIGN section 9. Never a blank page, never a fake screen.
 
 interface Props {
@@ -10,14 +12,15 @@ interface Props {
 }
 
 export function NotBuilt({ title, sentence, will, task }: Props) {
+  const { t } = useLang()
   return (
     <>
       <h1 className="font-condensed text-title font-semibold">{title}</h1>
       <p className="mb-6 max-w-[70ch]">{sentence}</p>
       <section className="border-line bg-sheet rounded-sheet max-w-[70ch] border p-6">
-        <h2 className="font-condensed text-label mb-2 font-semibold tracking-[0.06em]">NOT BUILT YET</h2>
+        <h2 className="font-condensed text-label mb-2 font-semibold tracking-[0.06em]">{t({ en: 'NOT BUILT YET', uz: 'HALI QURILMAGAN', ru: 'ЕЩЁ НЕ ГОТОВО' })}</h2>
         <p>{will}</p>
-        <p className="text-ink-soft text-small mt-4">Task {task} in the plan builds this screen.</p>
+        <p className="text-ink-soft text-small mt-4">{t({ en: `Task ${task} in the plan builds this screen.`, uz: `Bu ekranni rejadagi ${task} vazifasi quradi.`, ru: `Этот экран строит задача ${task} плана.` })}</p>
       </section>
     </>
   )

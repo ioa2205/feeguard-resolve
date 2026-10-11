@@ -9,6 +9,8 @@ import type {
   Actor,
   AuditLog,
   CaseResult,
+  CheckRun,
+  CheckRunList,
   ComplaintCreate,
   ComplaintCreated,
   ComplaintList,
@@ -21,6 +23,9 @@ import type {
   DraftReply,
   ErrorResponse,
   Health,
+  Incident,
+  IncidentDetail,
+  IncidentList,
   PresetList,
   QuarterlyReport,
   Reveal,
@@ -139,6 +144,16 @@ export const api = {
   updateActionPlan: (planId: string, body: ActionPlanUpdate) =>
     call<ActionPlanRow>('PUT', `/api/reports/action-plan/${id(planId)}`, mocks.actionPlan.items[0], body),
   quarterly: () => call<QuarterlyReport>('GET', '/api/reports/quarterly', mocks.quarterly),
+  /** Every check of the bank, newest first (D-039). */
+  checks: () => call<CheckRunList>('GET', '/api/checks', mocks.checks),
+  /** The daily check, now: only the loans that changed since the last check are read. */
+  runCheck: () => call<CheckRun>('POST', '/api/checks/run', mocks.checkRun),
+  incidents: () => call<IncidentList>('GET', '/api/incidents', mocks.incidents),
+  incident: (incidentId: string) =>
+    call<IncidentDetail>('GET', `/api/incidents/${id(incidentId)}`, mocks.incidentDetail),
+  /** Four eyes: an officer proposes, the compliance head approves, then every customer is told (D-040). */
+  incidentStep: (incidentId: string, step: 'propose' | 'approve' | 'notify') =>
+    call<Incident>('POST', `/api/incidents/${id(incidentId)}/${step}`, mocks.incidentDetail.incident),
   audit: (limit = 100, offset = 0) =>
     call<AuditLog>('GET', `/api/audit?limit=${limit}&offset=${offset}`, mocks.audit),
 

@@ -8,6 +8,7 @@ import { Mark } from '../components/Marks'
 import { Button, Empty, Label, Loading, PageHead, Problem } from '../components/Parts'
 import { formatDate, formatDateTime, formatMonth, formatSom } from '../format'
 import { useLoad } from '../hooks'
+import { tx, useLang } from '../i18n'
 import { useSession } from '../session'
 import type {
   CaseResult, Cleared, ContractClause, Decision, DecisionAction, DraftReply, Evidence, Finding, Verdict,
@@ -69,7 +70,7 @@ function Rows({ evidence }: { evidence: Evidence }) {
     [
       'Recorded on the loan',
       evidence.payments.map((payment) => [
-        `${formatDateTime(payment.posted_at)} · ${PAID_BY[payment.channel]}${
+        `${formatDateTime(payment.posted_at)} · ${tx(PAID_BY[payment.channel])}${
           payment.paid_at === payment.posted_at ? '' : ` · received ${formatDateTime(payment.paid_at)}`
         }`,
         payment.amount,
@@ -107,7 +108,7 @@ function Proof({ findings, cleared }: { findings: Finding[]; cleared: Cleared[] 
       {findings.map((finding) => (
         <div key={finding.finding_id}>
           <p>{finding.explanation}</p>
-          {finding.legal_basis && <p className="text-small">Legal basis: {verified(finding.legal_basis)}</p>}
+          {finding.legal_basis && <p className="text-small">Legal basis: {tx(verified(finding.legal_basis))}</p>}
           <Rows evidence={finding.evidence} />
         </div>
       ))}
@@ -165,11 +166,11 @@ function DecisionBlock({ result, onDecided }: { result: CaseResult; onDecided: (
     return (
       <Block title="Your decision">
         <p className={`border-stamp text-stamp rounded-sheet border-2 px-3 py-2 font-semibold ${justDecided ? 'stamp-lands' : ''}`}>
-          <Mark kind="tick" /> {DECIDED[decision.action]} by {ACTING_AS[decision.actor]}, {formatDateTime(decision.at)}
+          <Mark kind="tick" /> {tx(DECIDED[decision.action])} by {tx(ACTING_AS[decision.actor])}, {formatDateTime(decision.at)}
         </p>
         {decision.action === 'CORRECT' && decision.corrected_verdict && (
           <p className="mt-2">
-            Corrected to: {VERDICT[decision.corrected_verdict]}
+            Corrected to: {tx(VERDICT[decision.corrected_verdict])}
             {decision.corrected_excess !== null && `, to return ${formatSom(decision.corrected_excess)}`}
           </p>
         )}
@@ -207,7 +208,7 @@ function DecisionBlock({ result, onDecided }: { result: CaseResult; onDecided: (
               onChange={(event) => setVerdict(event.target.value as Verdict)}
               className="border-ink-soft bg-sheet rounded-field min-h-10 w-full border px-2"
             >
-              {VERDICTS.map((item) => <option key={item} value={item}>{VERDICT[item]}</option>)}
+              {VERDICTS.map((item) => <option key={item} value={item}>{tx(VERDICT[item])}</option>)}
             </select>
           </label>
           <label className="block">
@@ -256,7 +257,7 @@ function FindOthers({ findings, confirmed }: { findings: Finding[]; confirmed: b
                 confirmed ? 'bg-ink text-sheet' : 'bg-sheet text-ink'
               }`}
             >
-              Find others like this: {MISTAKE[finding.type].toLowerCase()}
+              Find others like this: {tx(MISTAKE[finding.type]).toLowerCase()}
             </Link>
           </li>
         ))}
@@ -298,7 +299,7 @@ function Letter({ result, confirmed, onChanged }: {
     <Block title="Letter to the customer">
       <article className="border-line bg-sheet aspect-[210/297] border p-6">
         <p className="text-small border-line mb-4 border-b pb-2">
-          {LETTER[draft.source]} · <strong>{confirmed ? 'Confirmed by a person' : 'Draft, not approved'}</strong>
+          {tx(LETTER[draft.source])} · <strong>{confirmed ? 'Confirmed by a person' : 'Draft, not approved'}</strong>
         </p>
         <p lang={LANG_ATTR[draft.lang]} className="text-words font-serif whitespace-pre-line">{draft.text}</p>
       </article>
@@ -339,16 +340,16 @@ function CaseView({ complaintId }: { complaintId: string }) {
     <>
       <p className="text-ink-soft text-small -mt-4 mb-4">
         Checked in {(result.elapsed_ms / 1000).toFixed(1)} s · {formatDate(result.window.date_from)} to{' '}
-        {formatDate(result.window.date_to)} · read by {READ_BY[understood.mode]}
+        {formatDate(result.window.date_to)} · read by {tx(READ_BY[understood.mode])}
       </p>
       <div className="grid gap-6 min-[1100px]:grid-cols-[280px_minmax(0,1fr)_340px] min-[1280px]:grid-cols-[320px_minmax(0,1fr)_380px]">
         <Column title="Customer says">
           <div className="border-stamp text-stamp rounded-sheet font-condensed border-2 px-3 py-2 tracking-[0.04em] uppercase">
             <p className="text-stamp-text font-bold tracking-[0.08em]">Received</p>
             <p>No. {complaint.complaint_id}</p>
-            <p>{formatDateTime(complaint.created_at)} · {RECEIVED_BY[complaint.channel]}</p>
-            <p>{LANGUAGE[complaint.lang]}</p>
-            <p>Answer due: {complaint.answer_due ? formatDate(complaint.answer_due) : verified(null)}</p>
+            <p>{formatDateTime(complaint.created_at)} · {tx(RECEIVED_BY[complaint.channel])}</p>
+            <p>{tx(LANGUAGE[complaint.lang])}</p>
+            <p>Answer due: {complaint.answer_due ? formatDate(complaint.answer_due) : tx(verified(null))}</p>
           </div>
           <blockquote lang={LANG_ATTR[complaint.lang]} className="text-words font-serif">
             “{complaint.text}”
@@ -357,12 +358,12 @@ function CaseView({ complaintId }: { complaintId: string }) {
 
           <Block title="What FeeGuard read">
             <dl>
-              <Fact name="Claim">{CLAIM[understood.claim_type]}</Fact>
+              <Fact name="Claim">{tx(CLAIM[understood.claim_type])}</Fact>
               <Fact name="Amount">
                 {understood.claimed_excess === null ? 'None named' : formatSom(understood.claimed_excess)}
               </Fact>
               <Fact name="Month">{understood.period ? formatMonth(understood.period) : 'None named'}</Fact>
-              <Fact name="Read by">{READ_BY[understood.mode]}</Fact>
+              <Fact name="Read by">{tx(READ_BY[understood.mode])}</Fact>
             </dl>
             <p className="text-small mt-2">The verdict does not depend on this reading. All four checks always run.</p>
           </Block>
@@ -378,7 +379,7 @@ function CaseView({ complaintId }: { complaintId: string }) {
         <Column title="Decision">
           <div>
             <p className={`rounded-sheet font-condensed text-stamp-text inline-block px-4 py-2 font-bold tracking-[0.08em] uppercase ${STAMP[result.verdict]}`}>
-              {VERDICT[result.verdict]}
+              {tx(VERDICT[result.verdict])}
             </p>
             {result.total_excess > 0 && (
               <p className="text-wrong mt-2 font-semibold">
@@ -422,6 +423,7 @@ function CaseView({ complaintId }: { complaintId: string }) {
 }
 
 export default function Case() {
+  useLang() // draw again when the language changes
   const { complaintId } = useParams()
   return (
     <>
