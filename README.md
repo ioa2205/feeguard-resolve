@@ -4,7 +4,7 @@ A tool for bank staff. It checks whether a customer's loan-payment complaint is 
 
 WIUT Hackathon 2026 · FinTech / AI in Finance · Startup mode
 
-> **Status on 11 Oct 2026, 11:00 Tashkent:** every screen and every API path is built, and a clean Docker build of the repository runs them. On the 20,000-loan demo bank the four checks found all 2,832 hidden mistakes with 0 false alarms and 0 of 20 look-alikes flagged ([docs/EVAL.md](docs/EVAL.md)). Complaints are read by rules and a trained classifier; no local AI model was chosen in time, so letters come from templates. Not measured: the test on 100 hand-written complaints and the stopwatch test. The three legal facts are still marked TO VERIFY.
+> **Status on 11 Oct 2026, 10:51 Tashkent:** every screen and every API path is built, and a clean Docker build of the repository runs them. On the 20,000-loan demo bank the four checks found all 2,832 hidden mistakes with 0 false alarms and 0 of 20 look-alikes flagged ([docs/EVAL.md](docs/EVAL.md)). Complaints are read by rules and a trained classifier; no local AI model was chosen in time, so letters come from templates. Not measured: the test on 100 hand-written complaints and the stopwatch test. The three legal facts are still marked TO VERIFY.
 
 ## The problem
 
