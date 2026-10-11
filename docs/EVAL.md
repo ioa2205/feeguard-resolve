@@ -34,6 +34,8 @@ The pass over the whole bank took 5.4 s and 25.3 s in two runs on this laptop (W
 
 ## Proof 3 — Understands real language (task B7)
 
+**Not measured.** Cut on 11 Oct 2026 at 10:55 Tashkent (`DECISIONS.md` D-035): there was no hand-written set and no local model. The Scoreboard says "Not measured yet".
+
 100 complaints written by hand by the team. Command: _to add_
 
 | Mode | Complaints | Type correct | Amount correct |
@@ -62,6 +64,8 @@ Measured 11 Oct 2026, between 02:26 and 02:28 Tashkent, on the code of commit `e
 Soʻm found equals soʻm planted for both. The scan itself answered in 40 ms and 35 ms (server time). The complaint was chosen by the test harness from the answer key. Find others checks every loan of the bank for that mistake, so its result does not depend on which complaint started it.
 
 ## Proof 5 — Saves time (task P2)
+
+**Not measured.** Cut on 11 Oct 2026 at 10:55 Tashkent (`DECISIONS.md` D-035).
 
 Who did it: _to add_ · The 5 complaints: _to add_
 

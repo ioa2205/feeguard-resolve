@@ -4,7 +4,7 @@ A tool for bank staff. It checks whether a customer's loan-payment complaint is 
 
 WIUT Hackathon 2026 · FinTech / AI in Finance · Startup mode
 
-> **Status on 11 Oct 2026, 10:45 Tashkent:** every screen and every API path is built, and a clean Docker build of the repository runs them. On the 20,000-loan demo bank the four checks found all 2,832 hidden mistakes with 0 false alarms and 0 of 20 look-alikes flagged ([docs/EVAL.md](docs/EVAL.md)). Not yet done: the public deploy, the choice of the local AI model, the 100 hand-written test complaints and the three legal facts. Task status is in [docs/PROGRESS.md](docs/PROGRESS.md).
+> **Status on 11 Oct 2026, 11:00 Tashkent:** every screen and every API path is built, and a clean Docker build of the repository runs them. On the 20,000-loan demo bank the four checks found all 2,832 hidden mistakes with 0 false alarms and 0 of 20 look-alikes flagged ([docs/EVAL.md](docs/EVAL.md)). Complaints are read by rules and a trained classifier; no local AI model was chosen in time, so letters come from templates. Not measured: the test on 100 hand-written complaints and the stopwatch test. The three legal facts are still marked TO VERIFY.
 
 ## The problem
 
@@ -55,7 +55,7 @@ Live demo: _link comes here_. No account is needed.
 
 ## Run it yourself
 
-These steps were run on Windows with Python 3.12 and Node 24. On 11 Oct 2026 a fresh clone was also built and tested in clean Linux containers (Python 3.11, Node 22): 346 tests passed, the contract check passed, and the screens ran over HTTPS behind Caddy ([docs/evidence/s5-clean-machine.txt](docs/evidence/s5-clean-machine.txt)).
+These steps were run on Windows with Python 3.12 and Node 24. On 11 Oct 2026 a fresh clone was also built and tested in clean Linux containers (Python 3.11, Node 22): 346 tests passed, the contract check passed, and the screens ran over HTTPS behind Caddy.
 
 The backend and the frontend are two separate apps. Each runs alone.
 
@@ -92,19 +92,14 @@ npm run dev:mocks    # no backend needed: runs on the sample data in src/mocks
 python scripts/check_contract.py
 ```
 
-**With Docker** (for a server): `cd deploy`, copy `.env.example` to `.env`, set `DOMAIN` to the public name, then `docker compose up -d --build`. Only Caddy publishes ports (80 and 443); it gets the HTTPS certificate for `DOMAIN` and forwards `/api` to the backend. At its first start the backend builds the default demo bank (6.7 s in Docker on a laptop). Without a model in the Ollama container, complaints are read by rules and every screen says so. Both images were built and run on 11 Oct 2026, but on a laptop, not yet on the server; there, Docker Desktop could not mount the Caddyfile, so the stack was started by hand with the same images ([docs/evidence/s5-clean-machine.txt](docs/evidence/s5-clean-machine.txt)).
+**With Docker** (for a server): `cd deploy`, copy `.env.example` to `.env`, set `DOMAIN` to the public name, then `docker compose up -d --build`. Only Caddy publishes ports (80 and 443); it gets the HTTPS certificate for `DOMAIN` and forwards `/api` to the backend. At its first start the backend builds the default demo bank (6.7 s in Docker on a laptop). Without a model in the Ollama container, complaints are read by rules and every screen says so. Both images were built and run on 11 Oct 2026, but on a laptop, not yet on the server; there, Docker Desktop could not mount the Caddyfile, so the stack was started by hand with the same images.
 
 ## Documents
 
 | File | What it holds |
 |---|---|
-| [docs/PLAN.md](docs/PLAN.md) | The whole plan |
-| [docs/DESIGN.md](docs/DESIGN.md) | How every screen looks, reads and behaves |
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | How it fits inside a bank: on-prem, read-only, security |
 | [DATA.md](DATA.md) | What is synthetic, what is real, and the sources |
 | [docs/EVAL.md](docs/EVAL.md) | Measured results |
-| [docs/DECISIONS.md](docs/DECISIONS.md) | Every decision and its reason |
-| [docs/PROGRESS.md](docs/PROGRESS.md) | Task status with evidence |
 | [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md) | Libraries, fonts and the AI model, with their licences |
 
 ## Licence

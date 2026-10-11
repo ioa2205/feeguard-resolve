@@ -2,7 +2,7 @@
 
 **All customer data in this project is synthetic. There is no real personal data anywhere: not in the demo, not in the tests, not in the repository.**
 
-> **Status on 11 Oct 2026:** the generator is built (tasks A1, A2, A6). The counts below are from the default demo bank; the exact rules are in `docs/DECISIONS.md` D-021 and D-025.
+> **Status on 11 Oct 2026:** the generator is built (tasks A1, A2, A6). The counts below are from the default demo bank; the exact rules are in `backend/app/generator/`.
 
 ## 1. What is fake
 
