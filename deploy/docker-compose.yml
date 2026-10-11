@@ -26,6 +26,9 @@ services:
     environment:
       LLM_URL: http://ollama:11434
       LLM_MODEL: ${LLM_MODEL:-}
+      # Demo only (DECISIONS D-037): when set, Gemini is used instead of the local model.
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_MODEL: ${GEMINI_MODEL:-}
       WORLDS_DIR: /worlds
     volumes:
       - worlds:/worlds

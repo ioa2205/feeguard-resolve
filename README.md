@@ -4,7 +4,7 @@ A tool for bank staff. It checks whether a customer's loan-payment complaint is 
 
 WIUT Hackathon 2026 · FinTech / AI in Finance · Startup mode
 
-> **Status on 11 Oct 2026, 10:51 Tashkent:** every screen and every API path is built, and a clean Docker build of the repository runs them. On the 20,000-loan demo bank the four checks found all 2,832 hidden mistakes with 0 false alarms and 0 of 20 look-alikes flagged ([docs/EVAL.md](docs/EVAL.md)). Complaints are read by rules and a trained classifier; no local AI model was chosen in time, so letters come from templates. Not measured: the test on 100 hand-written complaints and the stopwatch test. The three legal facts are still marked TO VERIFY.
+> **Status on 11 Oct 2026, 10:51 Tashkent:** every screen and every API path is built, and a clean Docker build of the repository runs them. On the 20,000-loan demo bank the four checks found all 2,832 hidden mistakes with 0 false alarms and 0 of 20 look-alikes flagged ([docs/EVAL.md](docs/EVAL.md)). In the demo, complaints are read and letters reworded by Gemini (`gemini-3.5-flash`, about 2 s a complaint) on invented data; without it, rules and a trained classifier read them and letters come from templates. Not measured: the test on 100 hand-written complaints and the stopwatch test. The three legal facts are still marked TO VERIFY.
 
 ## The problem
 
@@ -41,7 +41,7 @@ Any other complaint is marked "out of scope" and goes to a person.
 - **Every verdict shows its proof:** the schedule row, the debits, the payments, the charges and the contract clause.
 - **A person approves every result.** Nothing is sent or refunded automatically.
 - **Every action is written to an audit log** with a hash chain, so a changed record is visible.
-- **It runs inside the bank.** The AI model is local. No data goes to an outside service.
+- **It can run inside the bank.** All AI calls go through one module. The public demo uses Gemini on invented data; a bank plugs a local model into the same place, and then no data leaves the bank. If the AI is slow or off, rules read the complaint.
 - **It only reads bank data.** It never changes a bank system.
 
 ## The demo
@@ -68,7 +68,7 @@ python -m pytest -q
 python -m uvicorn app.main:app --reload --port 8000
 ```
 
-`http://localhost:8000/api/health` answers. `http://localhost:8000/api/docs` lists every path. At its first start the backend builds the default demo bank (20,000 loans, seed 2026) into `worlds/default/`; this takes 15 to 30 s on a laptop. `DEFAULT_WORLD_SIZE=5000` builds a smaller one. Without a local AI model, complaints are read by rules and every screen says so.
+`http://localhost:8000/api/health` answers. `http://localhost:8000/api/docs` lists every path. At its first start the backend builds the default demo bank (20,000 loans, seed 2026) into `worlds/default/`; this takes 15 to 30 s on a laptop. `DEFAULT_WORLD_SIZE=5000` builds a smaller one. To use Gemini, put `GEMINI_API_KEY=...` in `backend/.env` (git ignores it) and start with `--env-file .env`. Without an AI model, complaints are read by rules and every screen says so.
 
 To measure detection against the answer key (the numbers of `docs/EVAL.md`):
 

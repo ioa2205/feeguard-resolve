@@ -104,7 +104,9 @@ export function Frame() {
 
             <span>
               Complaints are read by:{' '}
-              <span className="font-semibold">{health ? READ_BY[health.llm_mode] : 'not known, the server did not answer'}</span>
+              <span className="font-semibold">{health
+                  ? READ_BY[health.llm_mode] + (health.llm_mode === 'llm' && health.model_name ? ` (${health.model_name})` : '')
+                  : 'not known, the server did not answer'}</span>
             </span>
           </div>
         </div>

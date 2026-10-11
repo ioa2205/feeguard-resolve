@@ -32,7 +32,7 @@ export const MISTAKE: Record<DefectType, string> = {
 export const CLAIM: Record<ClaimType, string> = { ...MISTAKE, OTHER: 'Something else' }
 
 export const READ_BY: Record<Mode, string> = {
-  llm: 'the local AI',
+  llm: 'the AI',
   rules: 'rules (the AI is off)',
 }
 
@@ -82,7 +82,7 @@ export const LANG_ATTR: Record<Lang, string> = {
 
 export const LETTER: Record<DraftSource, string> = {
   template: 'Standard letter',
-  llm: 'Reworded by the local AI',
+  llm: 'Reworded by the AI',
 }
 
 export const DECIDED: Record<DecisionAction, string> = {

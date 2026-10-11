@@ -1,9 +1,12 @@
-"""Calls the local model at LLM_URL with an 8-second limit. Task B3.
+"""Calls the model with an 8-second limit. Tasks B3 and D-037.
 
-The only code that talks to a model. The address must be on this machine or on
-the internal network (CLAUDE.md rule 4). Any other address is treated as "no
-model", so nothing can leave by accident. Without a model, or when it is slow
-or down, the caller falls back to rules and says so.
+The only code that talks to a model. Two kinds are possible:
+- a local model at LLM_URL (Ollama). The address must be on this machine or on
+  the internal network (CLAUDE.md rule 4); any other address is treated as
+  "no model", so nothing can leave by accident;
+- Gemini, only when GEMINI_API_KEY is set: the demo on invented data
+  (DECISIONS.md D-037). A bank would run a local model through the same calls.
+Without a model, or when it is slow or down, the caller falls back to rules and says so.
 """
 
 import ipaddress
@@ -17,6 +20,8 @@ import httpx
 TIME_LIMIT = 8.0  # seconds for one complaint, retries included
 LOCAL_NAMES = {"localhost", "ollama", "host.docker.internal"}
 STATUS_FOR = 30.0  # seconds a health answer is reused
+GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta"
+GEMINI_MODEL = "gemini-3.5-flash"  # about 2 s a complaint; GEMINI_MODEL in the environment overrides it
 
 # Tests put a fake model here. Nothing else may.
 transport: httpx.BaseTransport | None = None
@@ -53,8 +58,19 @@ def check_address() -> None:
         )
 
 
+def _gemini() -> tuple[str, str] | None:
+    """The Gemini key and model name, or None when no key is set."""
+    key = os.environ.get("GEMINI_API_KEY", "").strip().strip("\"'")
+    if not key:
+        return None
+    return key, os.environ.get("GEMINI_MODEL", "").strip() or GEMINI_MODEL
+
+
 def settings() -> tuple[str, str] | None:
-    """The model address and name, or None when no local model is set up."""
+    """The model address and name, or None when no model is set up. Gemini comes first."""
+    gemini = _gemini()
+    if gemini:
+        return GEMINI_URL, gemini[1]
     url = os.environ.get("LLM_URL", "").rstrip("/")
     model = os.environ.get("LLM_MODEL", "")
     if not url or not model or not is_local(url):
@@ -67,6 +83,21 @@ def ask_json(system: str, user: str, schema: dict, time_left: float, max_tokens:
     found = settings()
     if not found or time_left <= 0:
         raise LlmUnavailable
+    gemini = _gemini()
+    if gemini:
+        content = _ask_gemini(gemini, system, user, schema, time_left, max_tokens)
+    else:
+        content = _ask_ollama(found, system, user, schema, time_left, max_tokens)
+    try:
+        answer = json.loads(content)
+    except (TypeError, ValueError) as error:
+        raise LlmBadAnswer from error
+    if not isinstance(answer, dict):
+        raise LlmBadAnswer
+    return answer
+
+
+def _ask_ollama(found, system, user, schema, time_left, max_tokens) -> str:
     url, model = found
     request = {
         "model": model,
@@ -83,12 +114,52 @@ def ask_json(system: str, user: str, schema: dict, time_left: float, max_tokens:
     except httpx.HTTPError as error:
         raise LlmUnavailable from error
     try:
-        answer = json.loads(response.json()["message"]["content"])
+        return response.json()["message"]["content"]
     except (KeyError, TypeError, ValueError) as error:
         raise LlmBadAnswer from error
-    if not isinstance(answer, dict):
-        raise LlmBadAnswer
-    return answer
+
+
+def _thinking(model: str) -> dict:
+    """The least thinking each model allows: answers must come within the time limit."""
+    if model.startswith("gemini-2.5-flash"):
+        return {"thinkingBudget": 0}
+    if model.startswith("gemini-3.8"):
+        return {"thinkingLevel": "low"}  # it refuses "minimal"
+    if model.startswith("gemini-3"):
+        return {"thinkingLevel": "minimal"}
+    return {}
+
+
+def _ask_gemini(gemini, system, user, schema, time_left, max_tokens) -> str:
+    key, model = gemini
+    config = {
+        "temperature": 0,
+        "maxOutputTokens": max_tokens,
+        "responseMimeType": "application/json",
+        "responseJsonSchema": schema,
+    }
+    thinking = _thinking(model)
+    if thinking:
+        config["thinkingConfig"] = thinking
+    request = {
+        "systemInstruction": {"parts": [{"text": system}]},
+        "contents": [{"role": "user", "parts": [{"text": user}]}],
+        "generationConfig": config,
+    }
+    try:
+        with httpx.Client(timeout=time_left, transport=transport) as client:
+            # The key goes in a header, never in the address, so it never reaches a log.
+            response = client.post(
+                f"{GEMINI_URL}/models/{model}:generateContent", json=request, headers={"x-goog-api-key": key}
+            )
+            response.raise_for_status()
+    except httpx.HTTPError as error:
+        raise LlmUnavailable from error
+    try:
+        parts = response.json()["candidates"][0]["content"]["parts"]
+        return "".join(part["text"] for part in parts if "text" in part and not part.get("thought"))
+    except (KeyError, IndexError, TypeError, ValueError) as error:
+        raise LlmBadAnswer from error
 
 
 def status() -> tuple[str, str | None]:
@@ -98,11 +169,16 @@ def status() -> tuple[str, str | None]:
     if not found:
         return "rules", None
     url, model = found
+    gemini = _gemini()
     now = time.monotonic()
     if _status is None or now - _status[0] > STATUS_FOR:
         try:
-            with httpx.Client(timeout=1.0, transport=transport) as client:
-                alive = client.get(f"{url}/api/tags").status_code == 200
+            if gemini:
+                with httpx.Client(timeout=2.0, transport=transport) as client:
+                    alive = client.get(f"{url}/models/{model}", headers={"x-goog-api-key": gemini[0]}).status_code == 200
+            else:
+                with httpx.Client(timeout=1.0, transport=transport) as client:
+                    alive = client.get(f"{url}/api/tags").status_code == 200
         except httpx.HTTPError:
             alive = False
         _status = (now, alive)

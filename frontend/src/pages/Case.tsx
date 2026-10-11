@@ -284,8 +284,8 @@ function Letter({ result, confirmed, onChanged }: {
       onChanged(next)
       if (next.source === 'template') {
         setNote(health?.llm_mode === 'llm'
-          ? 'The local AI’s wording changed a number or the language, so the standard letter stays.'
-          : 'The local AI is off, so the standard letter stays.')
+          ? 'The AI’s wording changed a number or the language, so the standard letter stays.'
+          : 'The AI is off, so the standard letter stays.')
       }
     } catch (failure) {
       setError(failure as Error)
@@ -304,9 +304,9 @@ function Letter({ result, confirmed, onChanged }: {
       </article>
       {draft.source === 'template' && (
         <div className="mt-2 space-y-1">
-          <Button disabled={busy} onClick={improve}>{busy ? 'Asking the local AI…' : 'Improve the wording'}</Button>
+          <Button disabled={busy} onClick={improve}>{busy ? 'Asking the AI…' : 'Improve the wording'}</Button>
           <p className="text-small">
-            The local AI may reword the letter. FeeGuard keeps its text only if every number and the language stay the same.
+            The AI may reword the letter. FeeGuard keeps its text only if every number and the language stay the same.
           </p>
           {note && <p role="status">{note}</p>}
           {error && <Problem error={error} onRetry={improve} />}
