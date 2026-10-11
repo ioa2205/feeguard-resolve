@@ -35,7 +35,7 @@
 
 ## Fonts
 
-Fonts are installed from npm, bundled into our own build and served from our own server. Nothing is loaded from a font website.
+Fonts are installed from npm, bundled into our own build and served from our own server. Nothing is loaded from a font website. The deck (`docs/deck/fonts/`) carries copies of the Fira Sans and Fira Sans Condensed files from the same packages, with their licence text.
 
 | Font | Licence |
 |---|---|

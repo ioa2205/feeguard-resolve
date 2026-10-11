@@ -34,7 +34,7 @@ CANDIDATES = {
 }
 # What a value means, as part of a sentence: "93% of these cases <phrase>".
 PHRASES = {
-    "batch_run": "were taken in billing run {}",
+    "batch_run": "came from billing run {}",
     "cards": "belong to customers with {} cards",
     "schedule": "are on loans whose payment schedule was {}",
     "channel": "were paid through {}",
@@ -43,7 +43,7 @@ PHRASES = {
     "region": "are in {}",
 }
 CASES = {
-    double_debit.TYPE: "billing runs that took money twice",
+    double_debit.TYPE: "installments taken twice",
     early_debit.TYPE: "debits taken early",
     late_posting.TYPE: "penalties for payments recorded late",
     illegal_fee.TYPE: "fees not in the contract",
