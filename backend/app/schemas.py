@@ -83,6 +83,15 @@ class Shape(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
+class Words(Shape):
+    """One sentence FeeGuard wrote, in the three languages of the screens (D-041).
+    The plain field next to it holds the English one."""
+
+    en: str
+    uz: str
+    ru: str
+
+
 # --- Errors and health ---------------------------------------------------
 
 
@@ -350,6 +359,7 @@ class TimelineRow(Shape):
     finding_id: Id | None
     cleared_reason: ClearedReason | None
     sentence: str | None
+    sentence_t: Words | None = None
     not_owed: Som
     taken_early: Som
     days_early: int | None
@@ -368,6 +378,7 @@ class OtherCharge(Shape):
     finding_id: Id | None
     cleared_reason: ClearedReason | None
     sentence: str | None
+    sentence_t: Words | None = None
     not_owed: Som
 
 
@@ -414,6 +425,7 @@ class Finding(Shape):
     amount_affected: Som  # money involved
     days_early: int | None
     explanation: str
+    explanation_t: Words | None = None
     legal_basis: str | None  # a verified citation, TO_VERIFY, or None when no law is involved
     evidence: Evidence
 
@@ -424,6 +436,7 @@ class Cleared(Shape):
     contract_id: Id
     installment_n: int | None
     explanation: str
+    explanation_t: Words | None = None
     evidence: Evidence
 
 
@@ -463,6 +476,7 @@ class CaseResult(Shape):
     verdict: Verdict
     claim_match: bool | None  # None when the verdict is not SUPPORTED
     verdict_reason: str  # the "why" sentence under the verdict stamp
+    verdict_reason_t: Words | None = None
     window: CheckedWindow
     findings: list[Finding]
     cleared: list[Cleared]
@@ -492,6 +506,8 @@ class Cause(Shape):
     attributes: list[CauseAttribute]
     sentence: str
     suggested_fix: str | None
+    sentence_t: Words | None = None
+    suggested_fix_t: Words | None = None
 
 
 class ScanItem(Shape):
@@ -609,6 +625,7 @@ class IncidentLink(Shape):
     silent: Count
     total_excess: Som
     cause_sentence: str | None
+    cause_sentence_t: Words | None = None
 
 
 # --- Reports -------------------------------------------------------------
@@ -624,6 +641,10 @@ class ActionPlanRow(Shape):
     responsible_exec: str
     monitoring_deadline: date | None  # set by a person, never by FeeGuard
     status: PlanStatus
+    # A draft only: what FeeGuard wrote, in the three languages. A saved row keeps the person's words.
+    deficiency_t: Words | None = None
+    measures_t: Words | None = None
+    responsible_unit_t: Words | None = None
 
 
 class ActionPlan(Shape):
@@ -656,6 +677,7 @@ class RecurringIssue(Shape):
     total_excess: Som
     total_affected: Som
     cause_sentence: str | None
+    cause_sentence_t: Words | None = None
 
 
 class QuarterlyReport(Shape):

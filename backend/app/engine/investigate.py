@@ -14,12 +14,14 @@ from ..connector import Bank, Charge, Complaint, Debit, Payment
 from . import timeline as timelines
 from .checkers import CheckResult, Cleared, Evidence, Finding, check_all
 from .checkers import double_debit, early_debit, illegal_fee, late_posting
-from .wording import charge_name, day
+from .wording import charge_name, day, pick, plural_ru, said, tr, words
 
 CLAIM_TYPES = (double_debit.TYPE, early_debit.TYPE, late_posting.TYPE, illegal_fee.TYPE)
 MISTAKE_NAMES = {
-    double_debit.TYPE: "taken twice", early_debit.TYPE: "taken early",
-    late_posting.TYPE: "recorded late, then fined", illegal_fee.TYPE: "fee not allowed",
+    double_debit.TYPE: ("taken twice", "ikki marta yechilgan", "списано дважды"),
+    early_debit.TYPE: ("taken early", "muddatidan oldin yechilgan", "списано раньше срока"),
+    late_posting.TYPE: ("recorded late, then fined", "kech qayd etilib, jarima solingan", "зачислено поздно, затем штраф"),
+    illegal_fee.TYPE: ("fee not allowed", "ruxsat etilmagan komissiya", "недопустимая комиссия"),
 }
 MONTHS_WITHOUT_PERIOD = 3
 
@@ -68,33 +70,57 @@ def decide(claim_type: str, period: str | None, received: date, checked: list[Ch
     cleared = [c for result in checked for c in result.cleared if _inside(c, window)]
     findings.sort(key=lambda f: f.type != claim_type)  # stable: the claimed type first
     cleared.sort(key=lambda c: c.type != claim_type)
-    between = f"between {day(window[0])} and {day(window[1])}"
+    def between() -> str:
+        first, last = day(window[0]), day(window[1])
+        return tr(f"between {first} and {last}", f"{first}dan {last}gacha", f"с {first} по {last}")
 
     if findings:
         match = findings[0].type == claim_type
-        more = f" {len(findings) - 1} more {'mistake was' if len(findings) == 2 else 'mistakes were'} found." if len(findings) > 1 else ""
-        reason = findings[0].explanation + more
-        if not match:
-            reason = f"The records show a different mistake than the customer described: {MISTAKE_NAMES[findings[0].type]}. " + reason
-        return Outcome("SUPPORTED", match, reason, window, tuple(findings), tuple(cleared))
+        extra = len(findings) - 1
+
+        def supported() -> str:
+            more = "" if not extra else tr(
+                f" {extra} more {'mistake was' if extra == 1 else 'mistakes were'} found.",
+                f" Yana {extra} ta xato topildi.",
+                f" Найдено ещё {extra} {plural_ru(extra, 'ошибка', 'ошибки', 'ошибок')}.",
+            )
+            text = pick(findings[0].explanation) + more
+            if not match:
+                name = tr(*MISTAKE_NAMES[findings[0].type])
+                text = tr(f"The records show a different mistake than the customer described: {name}. ",
+                          f"Yozuvlar mijoz aytganidan boshqa xatoni koʻrsatmoqda: {name}. ",
+                          f"Записи показывают другую ошибку, чем описал клиент: {name}. ") + text
+            return text
+
+        return Outcome("SUPPORTED", match, said(supported), window, tuple(findings), tuple(cleared))
 
     if claim_type not in CLAIM_TYPES:
-        reason = (
-            "The complaint is not about a payment taken twice, a payment taken early, a penalty or a fee. "
-            f"The four checks found no mistake {between}."
-        )
+        reason = said(lambda: tr(
+            f"The complaint is not about a payment taken twice, a payment taken early, a penalty or a fee. "
+            f"The four checks found no mistake {between()}.",
+            f"Shikoyat ikki marta yoki muddatidan oldin yechilgan toʻlov, jarima yoki komissiya haqida emas. "
+            f"Toʻrt tekshiruv {between()} xato topmadi.",
+            f"Жалоба не о двойном или досрочном списании, штрафе или комиссии. "
+            f"Четыре проверки не нашли ошибок {between()}.",
+        ))
         return Outcome("OUT_OF_SCOPE", None, reason, window, (), tuple(cleared))
 
     same = [item for item in cleared if item.type == claim_type]
     if same:
         return Outcome("NOT_SUPPORTED", None, same[0].explanation, window, (), tuple(cleared))
     if period:
-        reason = f"No debit, penalty or fee matching the claim was found {between}."
+        reason = said(lambda: tr(
+            f"No debit, penalty or fee matching the claim was found {between()}.",
+            f"{between()} daʼvoga mos yechim, jarima yoki komissiya topilmadi.",
+            f"{between()} не найдено списаний, штрафов или комиссий, подходящих под жалобу.",
+        ))
         return Outcome("NOT_SUPPORTED", None, reason, window, (), tuple(cleared))
-    reason = (
-        f"No mistake was found {between}, and the complaint names no month. "
-        "Ask the customer for the month, the card or the amount."
-    )
+    reason = said(lambda: tr(
+        f"No mistake was found {between()}, and the complaint names no month. "
+        "Ask the customer for the month, the card or the amount.",
+        f"{between()} xato topilmadi, shikoyatda oy koʻrsatilmagan. Mijozdan oy, karta yoki summani soʻrang.",
+        f"{between()} ошибок не найдено, а в жалобе не указан месяц. Уточните у клиента месяц, карту или сумму.",
+    ))
     return Outcome("NEEDS_INFO", None, reason, window, (), tuple(cleared))
 
 
@@ -221,6 +247,7 @@ def _timeline(timeline: timelines.Timeline, outcome: Outcome, finding_ids: dict[
             finding_id=finding_ids[id(top)] if top else None,
             cleared_reason=checked[0].reason if checked and not top else None,
             sentence=top.explanation if top else (checked[0].explanation if checked else None),
+            sentence_t=words(top.explanation if top else (checked[0].explanation if checked else None)),
             not_owed=sum(f.amount_excess for f in mine),
             taken_early=early.amount_affected if early else 0,
             days_early=early.days_early if early else None,
@@ -241,6 +268,7 @@ def _timeline(timeline: timelines.Timeline, outcome: Outcome, finding_ids: dict[
             finding_id=finding_ids[id(finding)] if finding else None,
             cleared_reason=cleared_item.reason if cleared_item and not finding else None,
             sentence=finding.explanation if finding else (cleared_item.explanation if cleared_item else None),
+            sentence_t=words(finding.explanation if finding else (cleared_item.explanation if cleared_item else None)),
             not_owed=finding.amount_excess if finding else 0,
         ))
     if not rows and not other:
@@ -298,12 +326,14 @@ def investigate(bank: Bank, complaint: Complaint) -> schemas.CaseResult:
         verdict=outcome.verdict,
         claim_match=outcome.claim_match,
         verdict_reason=outcome.reason,
+        verdict_reason_t=words(outcome.reason),
         window=schemas.CheckedWindow(date_from=outcome.window[0], date_to=outcome.window[1]),
         findings=[
             schemas.Finding(
                 finding_id=finding_ids[id(f)], type=f.type, contract_id=f.contract_id,
                 installment_n=f.installment_n, amount_excess=f.amount_excess, amount_affected=f.amount_affected,
-                days_early=f.days_early, explanation=f.explanation, legal_basis=f.legal_basis,
+                days_early=f.days_early, explanation=f.explanation, explanation_t=words(f.explanation),
+                legal_basis=f.legal_basis,
                 evidence=_evidence(bank, f.contract_id, f.evidence, cards[f.contract_id]),
             )
             for f in outcome.findings
@@ -311,7 +341,8 @@ def investigate(bank: Bank, complaint: Complaint) -> schemas.CaseResult:
         cleared=[
             schemas.Cleared(
                 type=c.type, reason=c.reason, contract_id=c.contract_id, installment_n=c.installment_n,
-                explanation=c.explanation, evidence=_evidence(bank, c.contract_id, c.evidence, cards[c.contract_id]),
+                explanation=c.explanation, explanation_t=words(c.explanation),
+                evidence=_evidence(bank, c.contract_id, c.evidence, cards[c.contract_id]),
             )
             for c in outcome.cleared
         ],

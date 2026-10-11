@@ -7,7 +7,7 @@ owed, only later, so nothing is to return: `amount_excess` is 0 and
 """
 
 from ..timeline import Run, Timeline
-from ..wording import clock, day, days, som
+from ..wording import clock, day, days, said, som, tr
 from . import CheckResult, Cleared, Evidence, Finding
 
 TYPE = "EARLY_DEBIT"
@@ -32,7 +32,9 @@ def check(timeline: Timeline) -> CheckResult:
             cleared.append(
                 Cleared(
                     TYPE, EARLY_REPAYMENT_REQUESTED, contract.id, installment.n,
-                    f"The customer asked for early repayment on {day(asked_on)}.",
+                    said(lambda: tr(f"The customer asked for early repayment on {day(asked_on)}.",
+                                    f"Mijoz {day(asked_on)} kuni muddatidan oldin toʻlashni soʻragan.",
+                                    f"Клиент попросил о досрочном погашении {day(asked_on)}.")),
                     _evidence(timeline, run, (NOT_BEFORE_DUE_CLAUSE,)),
                 )
             )
@@ -47,7 +49,7 @@ def check(timeline: Timeline) -> CheckResult:
             Finding(
                 TYPE, contract.id, installment.n,
                 amount_excess=0, amount_affected=taken_early, days_early=days_early,
-                explanation=_explain(timeline, run, taken_early, days_early, moved),
+                explanation=said(lambda: _explain(timeline, run, taken_early, days_early, moved)),
                 evidence=_evidence(
                     timeline, run, (NOT_BEFORE_DUE_CLAUSE, NEW_SCHEDULE_CLAUSE) if moved else (NOT_BEFORE_DUE_CLAUSE,)
                 ),
@@ -60,15 +62,23 @@ def _explain(timeline: Timeline, run: Run, taken_early: int, days_early: int, mo
     cards = timeline.data.cards
     installment = timeline.row(run.rows[0]).installment
     first = next(debit for debit in run.debits if debit.kept)
-    card = cards[first.card_id].network if first.card_id in cards else "card"
-    sentence = (
-        f"{som(installment.total_due)} was due on {day(installment.due_date)}. "
-        f"{som(taken_early)} was taken on {day(run.at.date())} ({card} {clock(first.created_at)}), "
-        f"{days(days_early)} early. The customer had not asked for early repayment."
+    card = cards[first.card_id].network if first.card_id in cards else tr("card", "karta", "карта")
+    due, on, at = day(installment.due_date), day(run.at.date()), f"{card} {clock(first.created_at)}"
+    sentence = tr(
+        f"{som(installment.total_due)} was due on {due}. {som(taken_early)} was taken on {on} ({at}), "
+        f"{days(days_early)} early. The customer had not asked for early repayment.",
+        f"{due} kuni {som(installment.total_due)} toʻlanishi kerak edi. {som(taken_early)} {on} kuni ({at}) "
+        f"yechildi, muddatidan {days(days_early)} oldin. Mijoz muddatidan oldin toʻlashni soʻramagan.",
+        f"К оплате {due} было {som(installment.total_due)}. {som(taken_early)} списано {on} ({at}), "
+        f"на {days(days_early)} раньше срока. Клиент не просил о досрочном погашении.",
     )
     if moved:
-        changed_on = timeline.data.contract.schedule_changed_on
-        sentence += f" The payment schedule was changed on {day(changed_on)}, and the debit still came before the new date."
+        changed = day(timeline.data.contract.schedule_changed_on)
+        sentence += tr(
+            f" The payment schedule was changed on {changed}, and the debit still came before the new date.",
+            f" Toʻlov jadvali {changed} kuni oʻzgartirilgan, ammo yechim baribir yangi sanadan oldin boʻldi.",
+            f" График платежей был изменён {changed}, но списание всё равно прошло раньше новой даты.",
+        )
     return sentence
 
 

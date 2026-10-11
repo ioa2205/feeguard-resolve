@@ -8,7 +8,7 @@ installment. The excess is the penalty.
 from datetime import date, timedelta
 
 from ..timeline import Row, Timeline
-from ..wording import count_of, day, som
+from ..wording import business_days, day, said, som, tr
 from . import CheckResult, Cleared, Evidence, Finding
 
 TYPE = "LATE_POSTING"
@@ -20,9 +20,16 @@ PENALTY_CLAUSE = "5.1"
 NO_PENALTY_IN_TIME_CLAUSE = "5.2"
 
 CHANNEL_NAMES = {
-    "AUTO_DEBIT": "automatic debit", "PAYNET": "Paynet", "CLICK": "Click",
-    "BRANCH": "a bank branch", "APP": "the bank app",
+    "AUTO_DEBIT": ("automatic debit", "avtomatik yechim", "автосписание"),
+    "PAYNET": ("Paynet", "Paynet", "Paynet"),
+    "CLICK": ("Click", "Click", "Click"),
+    "BRANCH": ("a bank branch", "bank filiali", "отделение банка"),
+    "APP": ("the bank app", "bank ilovasi", "приложение банка"),
 }
+
+
+def channel_name(code: str) -> str:
+    return tr(*CHANNEL_NAMES.get(code, ("another channel", "boshqa kanal", "другой канал")))
 
 
 def business_days_between(start: date, end: date) -> int:
@@ -48,11 +55,15 @@ def check(timeline: Timeline) -> CheckResult:
         fined = sum(charge.amount for charge in penalties)
 
         if row.paid_at is None or row.paid_at.date() > due:
-            arrived = (
-                f"The payment arrived on {day(row.paid_at.date())}, after the due date."
-                if row.paid_at
-                else f"No full payment had arrived by the due date, {day(due)}."
-            )
+            arrived = said(lambda: tr(
+                f"The payment arrived on {day(row.paid_at.date())}, after the due date.",
+                f"Toʻlov {day(row.paid_at.date())} kuni, muddatdan keyin kelgan.",
+                f"Платёж поступил {day(row.paid_at.date())}, после срока.",
+            ) if row.paid_at else tr(
+                f"No full payment had arrived by the due date, {day(due)}.",
+                f"Toʻlov muddatigacha ({day(due)}) toʻliq toʻlov kelmagan.",
+                f"К сроку оплаты, {day(due)}, полный платёж не поступил.",
+            ))
             cleared.append(
                 Cleared(TYPE, PAID_AFTER_DUE_DATE, contract_id, row.installment.n, arrived,
                         _evidence(row, penalties, (PENALTY_CLAUSE,)))
@@ -60,20 +71,32 @@ def check(timeline: Timeline) -> CheckResult:
         elif row.posted_at.date() > due:
             late = business_days_between(due, row.posted_at.date())
             channels = {payment.channel for payment, _ in row.payments}
-            through = f" through {CHANNEL_NAMES.get(next(iter(channels)), 'another channel')}" if len(channels) == 1 else ""
+            only = next(iter(channels)) if len(channels) == 1 else None
             findings.append(
                 Finding(
                     TYPE, contract_id, row.installment.n,
                     amount_excess=fined, amount_affected=fined, days_early=None,
-                    explanation=(
-                        f"{som(row.installment.total_due)} was due on {day(due)}. The customer paid it{through} "
-                        f"on {day(row.paid_at.date())}, in time. The bank recorded it on {day(row.posted_at.date())}, "
-                        f"{count_of(late, 'business day')} late, and charged a penalty of {som(fined)}."
-                    ),
+                    explanation=said(lambda: _explain(row, due, late, only, fined)),
                     evidence=_evidence(row, penalties, (PAID_DAY_COUNTS_CLAUSE, NO_PENALTY_IN_TIME_CLAUSE)),
                 )
             )
     return CheckResult(tuple(findings), tuple(cleared))
+
+
+def _explain(row: Row, due: date, late: int, channel: str | None, fined: int) -> str:
+    owed, paid, posted = som(row.installment.total_due), day(row.paid_at.date()), day(row.posted_at.date())
+    if channel:
+        through = tr(f" through {channel_name(channel)}", f" {channel_name(channel)} orqali", f" через {channel_name(channel)}")
+    else:
+        through = ""
+    return tr(
+        f"{owed} was due on {day(due)}. The customer paid it{through} on {paid}, in time. The bank recorded it on "
+        f"{posted}, {business_days(late)} late, and charged a penalty of {som(fined)}.",
+        f"{day(due)} kuni {owed} toʻlanishi kerak edi. Mijoz uni {paid} kuni{through}, oʻz vaqtida toʻlagan. Bank "
+        f"toʻlovni {posted} kuni, {business_days(late)} kechikib qayd etgan va {som(fined)} jarima olgan.",
+        f"К оплате {day(due)} было {owed}. Клиент оплатил{through} {paid}, вовремя. Банк зачислил платёж {posted}, "
+        f"с опозданием на {business_days(late)}, и начислил штраф {som(fined)}.",
+    )
 
 
 def _evidence(row: Row, penalties: tuple, clauses: tuple[str, ...]) -> Evidence:

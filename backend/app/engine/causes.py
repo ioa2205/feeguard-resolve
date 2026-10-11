@@ -21,6 +21,7 @@ from ..connector import SUCCESS, ContractData
 from .checkers import Finding, double_debit, early_debit, illegal_fee, late_posting
 from .fixes import fix_for
 from .timeline import Run, Timeline
+from .wording import pick, plural_ru, said, tr, words
 
 MIN_FINDINGS = 20  # with fewer, no cause is named: "too few cases for a pattern"
 MIN_SUPPORT = 0.6
@@ -49,6 +50,58 @@ CASES = {
     late_posting.TYPE: "penalties for payments recorded late",
     illegal_fee.TYPE: "fees not in the contract",
 }
+# Uzbek: the noun after "N ta"; Russian: nominative and genitive plural, used without a number.
+CASES_UZ = {
+    double_debit.TYPE: "ikki marta yechilgan toʻlov",
+    early_debit.TYPE: "muddatidan oldin yechilgan toʻlov",
+    late_posting.TYPE: "kech qayd etilgan toʻlov uchun jarima",
+    illegal_fee.TYPE: "shartnomada yoʻq komissiya",
+}
+CASES_RU = {
+    double_debit.TYPE: ("платежи, списанные дважды", "платежей, списанных дважды"),
+    early_debit.TYPE: ("досрочные списания", "досрочных списаний"),
+    late_posting.TYPE: ("штрафы за поздно зачисленные платежи", "штрафов за поздно зачисленные платежи"),
+    illegal_fee.TYPE: ("комиссии, которых нет в договоре", "комиссий, которых нет в договоре"),
+}
+PHRASES_UZ = {
+    "batch_run": "{} hisob-kitob jarayonida yechilgan",
+    "cards": "kartalari soni {} boʻlgan mijozlarga tegishli",
+    "schedule": "toʻlov jadvali {} kreditlarda",
+    "channel": "{} orqali toʻlangan",
+    "product": "{} shartnomalarida",
+    "tariff": "{} tarif boʻyicha imzolangan kreditlarda",
+    "region": "{} hududida",
+}
+PHRASES_RU = {
+    "batch_run": "пришлись на прогон списаний {}",
+    "cards": "относятся к клиентам, у которых карт: {}",
+    "schedule": "приходятся на кредиты, где график платежей {}",
+    "channel": "оплачены через {}",
+    "product": "приходятся на договоры «{}»",
+    "tariff": "приходятся на кредиты с тарифом «{}»",
+    "region": "приходятся на регион «{}»",
+}
+# Values that are words, not names, in the three languages.
+VALUES = {
+    ("cards", "2 or more"): ("2 or more", "2 va undan koʻp", "2 и более"),
+    ("schedule", "changed"): ("changed", "oʻzgartirilgan", "изменён"),
+    ("schedule", "never changed"): ("never changed", "hech oʻzgartirilmagan", "не менялся"),
+    ("channel", "AUTO_DEBIT"): ("AUTO_DEBIT", "avtomatik yechim", "автосписание"),
+    ("channel", "BRANCH"): ("BRANCH", "bank filiali", "отделение банка"),
+    ("channel", "APP"): ("APP", "bank ilovasi", "приложение банка"),
+    ("channel", "PAYNET"): ("PAYNET", "Paynet", "Paynet"),
+    ("channel", "CLICK"): ("CLICK", "Click", "Click"),
+}
+
+
+def _value(name: str, value: str) -> str:
+    known = VALUES.get((name, value))
+    if known:
+        return tr(*known)
+    if name == "tariff" and value.startswith("version "):
+        number = value.removeprefix("version ")
+        return tr(value, f"{number}-versiya", f"версия {number}")
+    return value
 
 Trait = tuple[str, str]  # (attribute, value)
 
@@ -173,11 +226,20 @@ def concentrated(finding_type: str, traits: list[tuple[Trait, ...]], profile: Pr
 def times(lift: float) -> str:
     """41.2 -> "41 times", 3.46 -> "3.5 times", 4.04 -> "4 times"."""
     shown = f"{lift:.0f}" if lift >= 10 else f"{lift:.1f}".removesuffix(".0")
-    return f"{shown} times"
+    if "." in shown:
+        return tr(f"{shown} times", f"{shown} baravar", f"{shown.replace('.', ',')} раза")
+    return tr(f"{shown} times", f"{shown} baravar", f"{shown} {plural_ru(int(shown), 'раз', 'раза', 'раз')}")
 
 
 def sentence(finding_type: str, count: int, rows: list[Concentration]) -> str:
     """The cause table in words. The table itself is always shown next to it."""
+    return said(lambda: _sentence(finding_type, count, rows))
+
+
+def _sentence(finding_type: str, count: int, rows: list[Concentration]) -> str:
+    current = tr("en", "uz", "ru")
+    if current != "en":
+        return _sentence_other(current, finding_type, count, rows)
     if not rows:
         return (
             f"No common cause stands out in these {count} {CASES[finding_type]}: no billing run, channel, "
@@ -195,6 +257,38 @@ def sentence(finding_type: str, count: int, rows: list[Concentration]) -> str:
     return " ".join(parts)
 
 
+def _sentence_other(current: str, finding_type: str, count: int, rows: list[Concentration]) -> str:
+    if current == "uz":
+        case = CASES_UZ[finding_type]
+        if not rows:
+            return (f"{count} ta {case}da umumiy sabab koʻrinmaydi: hech bir hisob-kitob jarayoni, kanal, mahsulot, "
+                    "tarif, hudud yoki kartalar soni ularning 60 foizini odatdagidan 3 baravar koʻp qamrab olmaydi.")
+        parts = []
+        for number, row in enumerate(rows[:3]):
+            percent = round(row.support * 100)
+            if number == 0:
+                who = f"Barcha {count} ta {case}" if row.support == 1 else f"{count} ta {case}ning {percent} foizi"
+            else:
+                who = "Ularning barchasi" if row.support == 1 else f"Ularning {percent} foizi"
+            what = PHRASES_UZ[row.name].format(_value(row.name, row.value))
+            parts.append(f"{who} {what}, odatdagidan {times(row.lift)} koʻp.")
+        return " ".join(parts)
+    nominative, genitive = CASES_RU[finding_type]
+    if not rows:
+        return (f"Среди {genitive} ({count}) нет явной общей причины: ни прогон списаний, ни канал, продукт, тариф, "
+                "регион или число карт не охватывают 60% из них при частоте в 3 раза выше обычной.")
+    parts = []
+    for number, row in enumerate(rows[:3]):
+        percent = round(row.support * 100)
+        if number == 0:
+            who = f"Все {nominative} ({count})" if row.support == 1 else f"{percent}% {genitive} ({count})"
+        else:
+            who = "Все они" if row.support == 1 else f"{percent}% из них"
+        what = PHRASES_RU[row.name].format(_value(row.name, row.value))
+        parts.append(f"{who} {what}, в {times(row.lift)} чаще обычного.")
+    return " ".join(parts)
+
+
 def find(finding_type: str, traits: list[tuple[Trait, ...]], profile: Profile) -> schemas.Cause | None:
     """The cause of one mistake type in one bank, or None when there are too few findings."""
     if len(traits) < MIN_FINDINGS:
@@ -205,6 +299,8 @@ def find(finding_type: str, traits: list[tuple[Trait, ...]], profile: Profile) -
             schemas.CauseAttribute(name=row.name, value=row.value, support=round(row.support, 4), lift=round(row.lift, 2))
             for row in rows
         ],
-        sentence=sentence(finding_type, len(traits), rows),
-        suggested_fix=fix_for(finding_type, [row.name for row in rows]),
+        sentence=(text := sentence(finding_type, len(traits), rows)),
+        suggested_fix=(fix := fix_for(finding_type, [row.name for row in rows])),
+        sentence_t=words(text),
+        suggested_fix_t=words(fix),
     )

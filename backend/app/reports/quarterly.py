@@ -63,6 +63,7 @@ def report(bank: Bank, store: sqlite3.Connection, scan_of) -> schemas.QuarterlyR
                 finding_type=kind, affected_contracts=scan.affected_contracts,
                 affected_customers=scan.affected_customers, total_excess=scan.total_excess,
                 total_affected=scan.total_affected, cause_sentence=scan.cause.sentence if scan.cause else None,
+                cause_sentence_t=scan.cause.sentence_t if scan.cause else None,
             ))
     return schemas.QuarterlyReport(
         quarter=quarter, date_from=start, date_to=end, complaints_total=total,

@@ -199,6 +199,7 @@ def links(store: sqlite3.Connection, found: scanning.BankFindings | None, bank: 
             known_before=incident.incident_id in known_before, opened_at=incident.opened_at, opened_by=incident.opened_by,
             customers=incident.customers, silent=incident.silent, total_excess=incident.total_excess,
             cause_sentence=incident.cause.sentence if incident.cause else None,
+            cause_sentence_t=incident.cause.sentence_t if incident.cause else None,
         ))
     return result
 

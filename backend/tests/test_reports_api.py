@@ -73,7 +73,9 @@ def test_a_saved_row_comes_back_as_saved_and_is_in_the_audit_log(client, world):
         last = store.execute("SELECT actor, action FROM audit_log ORDER BY id DESC LIMIT 1").fetchone()
 
     assert saved.status_code == 200
-    assert shown == {"id": "AP-LATE-POSTING", "finding_type": "LATE_POSTING", **edited}
+    # A saved row keeps the person's words, so it has no translations (D-041).
+    assert shown == {"id": "AP-LATE-POSTING", "finding_type": "LATE_POSTING", **edited,
+                     "deficiency_t": None, "measures_t": None, "responsible_unit_t": None}
     assert last == ("compliance", "PLAN_ROW_SAVED")
 
 

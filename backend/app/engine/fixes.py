@@ -5,6 +5,7 @@ These are suggestions for a person to edit in the action plan, never decisions.
 """
 
 from .checkers import double_debit, early_debit, illegal_fee, late_posting
+from .wording import Said
 
 FIXES = {
     (double_debit.TYPE, "batch_run"): (
@@ -37,10 +38,70 @@ FIXES = {
 }
 
 
+FIXES_UZ = {
+    (double_debit.TYPE, "batch_run"): (
+        "Hisob-kitob jarayoni boshqa kartadan qayta urinishdan oldin birinchi yechimning yakuniy holatini tekshirsin. "
+        "Har bir toʻlovga noyob kalit (idempotency key) bering, shunda bitta jarayon uni faqat bir marta yechadi."
+    ),
+    (double_debit.TYPE, "cards"): (
+        "Ikki va undan ortiq kartasi bor mijozlarda keyingi kartadan faqat birinchi kartadagi yechim yakuniy "
+        "rad etilgandan keyin urinib koʻring, u hali kutilayotgan paytda hech qachon."
+    ),
+    (early_debit.TYPE, "schedule"): (
+        "Toʻlov jadvali oʻzgarganda avtomatik yechish rejasini yangi jadval asosida qayta tuzing. Mijoz muddatidan "
+        "oldin toʻlashni soʻramagan boʻlsa, toʻlov muddatidan oldingi har qanday avtomatik yechimni toʻxtating."
+    ),
+    (early_debit.TYPE, "batch_run"): (
+        "Ushbu hisob-kitob jarayonining yechish sanalarini u ishga tushishidan oldin amaldagi jadval bilan solishtiring."
+    ),
+    (late_posting.TYPE, "channel"): (
+        "Bu kanaldan kelgan toʻlovlarni bank faylni qayta ishlagan kun bilan emas, mijoz toʻlagan kun bilan qayd eting. "
+        "Kanalning toʻlov kunidagi toʻlovlari qayd etilmaguncha jarima hisoblamang."
+    ),
+    (illegal_fee.TYPE, "tariff"): (
+        "Bu komissiyani yangi tarifdan olib tashlang va uni toʻlagan har bir mijozga qaytaring. Har bir tarif "
+        "oʻzgarishini ishga tushirishdan oldin shartnoma matni va qonun bilan solishtiring."
+    ),
+    (illegal_fee.TYPE, "product"): (
+        "Bu mahsulotda ushbu komissiyani olishni toʻxtating va uni toʻlagan har bir mijozga qaytaring. Mahsulot "
+        "komissiyalari roʻyxatini uning shartnoma namunasi bilan solishtiring."
+    ),
+}
+FIXES_RU = {
+    (double_debit.TYPE, "batch_run"): (
+        "Прежде чем прогон списаний повторит попытку с другой карты, проверяйте окончательный статус первого "
+        "списания. Присвойте каждому платежу ключ идемпотентности, чтобы один прогон мог списать его только раз."
+    ),
+    (double_debit.TYPE, "cards"): (
+        "У клиентов с двумя и более картами пробуйте следующую карту только после окончательного отказа по первой, "
+        "но никогда, пока списание по ней ещё в обработке."
+    ),
+    (early_debit.TYPE, "schedule"): (
+        "При изменении графика платежей перестраивайте план автосписаний по новому графику. Блокируйте любое "
+        "автосписание до срока, если клиент не просил о досрочном погашении."
+    ),
+    (early_debit.TYPE, "batch_run"): (
+        "Перед запуском этого прогона сверяйте даты списаний с действующим графиком."
+    ),
+    (late_posting.TYPE, "channel"): (
+        "Зачисляйте платежи из этого канала датой оплаты клиентом, а не датой обработки файла банком. Не начисляйте "
+        "штраф, пока платежи канала за дату срока не зачислены."
+    ),
+    (illegal_fee.TYPE, "tariff"): (
+        "Уберите эту комиссию из нового тарифа и верните её каждому клиенту, который её заплатил. Проверяйте каждое "
+        "изменение тарифа на соответствие договору и закону до запуска."
+    ),
+    (illegal_fee.TYPE, "product"): (
+        "Прекратите взимать эту комиссию по этому продукту и верните её каждому клиенту, который её заплатил. "
+        "Сверьте список комиссий продукта с шаблоном его договора."
+    ),
+}
+
+
 def fix_for(finding_type: str, attributes: list[str]) -> str | None:
     """The fix for the strongest attribute that has one, or None."""
     for name in attributes:
-        fix = FIXES.get((finding_type, name))
-        if fix:
-            return fix
+        key = (finding_type, name)
+        if key in FIXES:
+            return Said(FIXES[key], FIXES_UZ[key], FIXES_RU[key])
     return None
