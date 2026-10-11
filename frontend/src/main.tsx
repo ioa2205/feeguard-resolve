@@ -10,12 +10,15 @@ import '@fontsource/charis-sil/400.css'
 import './index.css'
 
 import App from './App'
+import { LangProvider } from './i18n'
 import { SessionProvider } from './session'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <SessionProvider>
-      <App />
-    </SessionProvider>
+    <LangProvider>
+      <SessionProvider>
+        <App />
+      </SessionProvider>
+    </LangProvider>
   </StrictMode>,
 )

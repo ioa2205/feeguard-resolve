@@ -1,12 +1,14 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { useSearchParams } from 'react-router-dom'
 
 import { api } from '../api'
 import { CustomerPicker } from '../components/CustomerPicker'
+import { LiveRun } from '../components/LiveRun'
 import { Button, Empty, Label, Loading, PageHead, Problem } from '../components/Parts'
 import { formatDateTime, formatSom } from '../format'
 import { useLoad } from '../hooks'
+import { useLang } from '../i18n'
 import { useSession } from '../session'
 import type { CustomerStatement, StatementMessage } from '../types'
 import { MAX_TEXT } from '../types'
@@ -35,6 +37,7 @@ function line(message: StatementMessage): string {
 }
 
 function Messages({ statement }: { statement: CustomerStatement }) {
+  const { t } = useLang()
   const box = useRef<HTMLOListElement>(null)
   // The newest message is at the bottom, where a phone shows it.
   useEffect(() => {
@@ -43,7 +46,7 @@ function Messages({ statement }: { statement: CustomerStatement }) {
 
   return (
     <section>
-      <h2 className="border-ink mb-2 border-b-2 pb-1"><Label>Messages from the bank, oldest first</Label></h2>
+      <h2 className="border-ink mb-2 border-b-2 pb-1"><Label>{t({ en: 'Messages from the bank, oldest first', uz: 'Bankdan kelgan xabarlar, eskisi birinchi', ru: 'Сообщения банка, сначала старые' })}</Label></h2>
       {statement.messages.length === 0 ? (
         <p>The bank has sent this customer no message yet.</p>
       ) : (
@@ -67,7 +70,8 @@ function Write({ customerId }: { customerId: string }) {
   const [text, setText] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<Error | null>(null)
-  const [sent, setSent] = useState<string | null>(null)
+  const [sent, setSent] = useState<{ id: string; text: string } | null>(null)
+  const { t } = useLang()
 
   async function send(event?: FormEvent) {
     event?.preventDefault()
@@ -75,7 +79,7 @@ function Write({ customerId }: { customerId: string }) {
     setError(null)
     try {
       const created = await api.createComplaint({ customer_id: customerId, text: text.trim() })
-      setSent(created.complaint_id)
+      setSent({ id: created.complaint_id, text: text.trim() })
       setText('')
     } catch (failure) {
       setError(failure as Error)
@@ -87,10 +91,14 @@ function Write({ customerId }: { customerId: string }) {
   const empty = text.trim().length === 0
   return (
     <section>
-      <h2 className="border-ink mb-2 border-b-2 pb-1"><Label>Write a complaint</Label></h2>
+      <h2 className="border-ink mb-2 border-b-2 pb-1"><Label>{t({ en: 'Write a complaint', uz: 'Shikoyat yozing', ru: 'Напишите жалобу' })}</Label></h2>
       <form onSubmit={send} className="max-w-[70ch] space-y-2">
         <label htmlFor={field} className="block">
-          Write it in your own words, the way a customer would: Uzbek in Latin or Cyrillic letters, Russian, or a mix.
+          {t({
+            en: 'Write it in your own words, the way a customer would: Uzbek in Latin or Cyrillic letters, Russian, English, or a mix. FeeGuard starts the moment you send it.',
+            uz: 'Mijoz kabi oʻz soʻzlaringiz bilan yozing: oʻzbekcha lotin yoki kirill harflarida, ruscha, inglizcha yoki aralash. Yuborishingiz bilan FeeGuard ishga tushadi.',
+            ru: 'Напишите своими словами, как клиент: по-узбекски латиницей или кириллицей, по-русски, по-английски или вперемешку. FeeGuard начнёт работу сразу после отправки.',
+          })}
         </label>
         <textarea
           id={field}
@@ -100,20 +108,17 @@ function Write({ customerId }: { customerId: string }) {
           onChange={(event) => setText(event.target.value)}
           className="rounded-field border-ink-soft bg-sheet text-words w-full border px-3 py-2 font-serif"
         />
-        <p className="text-ink-soft text-small">{text.length} of {MAX_TEXT} characters.</p>
+        <p className="text-ink-soft text-small">{text.length} / {MAX_TEXT}</p>
         <div className="flex flex-wrap items-center gap-4">
-          <Button main type="submit" disabled={busy || empty}>{busy ? 'Sending…' : 'Send complaint'}</Button>
-          {empty && !busy && <span className="text-small">Write something first.</span>}
+          <Button main type="submit" disabled={busy || empty}>{busy ? t({ en: 'Sending…', uz: 'Yuborilmoqda…', ru: 'Отправка…' }) : t({ en: 'Send complaint', uz: 'Shikoyatni yuborish', ru: 'Отправить жалобу' })}</Button>
+          {empty && !busy && <span className="text-small">{t({ en: 'Write something first.', uz: 'Avval biror narsa yozing.', ru: 'Сначала напишите текст.' })}</span>}
         </div>
       </form>
       {error && <div className="mt-3"><Problem error={error} onRetry={() => send()} /></div>}
       {sent && (
-        <p role="status" className="border-stamp rounded-sheet mt-3 max-w-[70ch] border-2 p-3">
-          The bank registered complaint <strong>{sent}</strong>. FeeGuard can see it now.{' '}
-          <Link to={`/case/${encodeURIComponent(sent)}`} className="text-stamp font-semibold underline">
-            Check it in FeeGuard
-          </Link>
-        </p>
+        <div className="mt-4">
+          <LiveRun complaintId={sent.id} text={sent.text} />
+        </div>
       )}
     </section>
   )
@@ -152,21 +157,26 @@ function Phone({ customerId }: { customerId: string }) {
 
 export default function CustomerView() {
   const { worldId } = useSession()
+  const { t } = useLang()
   const [params, setParams] = useSearchParams()
   const chosen = params.get('customer')
 
   return (
     <>
       <PageHead
-        title="A customer’s phone"
-        sentence="What one customer sees from the bank, and a place to write a complaint in your own words."
+        title={t({ en: 'Write a complaint, watch FeeGuard work', uz: 'Shikoyat yozing, FeeGuard ishini kuzating', ru: 'Напишите жалобу и смотрите, как работает FeeGuard' })}
+        sentence={t({
+          en: 'Pick any customer, read what the bank sent them, then complain as them. The AI reads it and FeeGuard checks it, finds others and drafts the reply, live.',
+          uz: 'Istalgan mijozni tanlang, bank unga nima yuborganini oʻqing va uning nomidan shikoyat yozing. SI uni oʻqiydi, FeeGuard tekshiradi, boshqalarni topadi va javob tayyorlaydi, jonli.',
+          ru: 'Выберите любого клиента, прочитайте, что ему прислал банк, и пожалуйтесь от его имени. ИИ прочитает жалобу, а FeeGuard проверит её, найдёт других и подготовит ответ, вживую.',
+        })}
       />
       <div key={worldId} className="space-y-6">
         <CustomerPicker chosen={chosen} onPick={(customer) => setParams({ customer: customer.customer_id })} />
         {chosen ? (
           <Phone key={chosen} customerId={chosen} />
         ) : (
-          <Empty>Find a customer above to see the messages the bank sent them. Every name is invented.</Empty>
+          <Empty>{t({ en: 'Find a customer above to see the messages the bank sent them. Every name is invented.', uz: 'Bank yuborgan xabarlarni koʻrish uchun yuqoridan mijozni toping. Barcha ismlar oʻylab topilgan.', ru: 'Найдите клиента выше, чтобы увидеть сообщения банка. Все имена вымышлены.' })}</Empty>
         )}
       </div>
     </>
