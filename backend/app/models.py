@@ -90,6 +90,29 @@ CREATE TABLE IF NOT EXISTS action_plans (
     measures TEXT NOT NULL, deadline TEXT, responsible_unit TEXT NOT NULL,
     responsible_exec TEXT NOT NULL, monitoring_deadline TEXT, status TEXT NOT NULL
 );
+CREATE TABLE IF NOT EXISTS check_runs (
+    id TEXT PRIMARY KEY, at TEXT NOT NULL, trigger TEXT NOT NULL, scope TEXT NOT NULL,
+    loans_read INTEGER NOT NULL, loans_total INTEGER NOT NULL, new_findings INTEGER NOT NULL,
+    gone_findings INTEGER NOT NULL, elapsed_ms INTEGER NOT NULL,
+    opened_json TEXT NOT NULL, grown_json TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS incidents (
+    id TEXT PRIMARY KEY, finding_type TEXT NOT NULL, opened_at TEXT NOT NULL,
+    opened_by_run TEXT NOT NULL, opened_by TEXT NOT NULL, customers_seen INTEGER NOT NULL,
+    proposed_by TEXT, proposed_at TEXT, approved_by TEXT, approved_at TEXT
+);
+CREATE TABLE IF NOT EXISTS incident_customers (
+    incident_id TEXT NOT NULL, customer_id TEXT NOT NULL,
+    proposed_amount INTEGER NOT NULL DEFAULT 0, approved_amount INTEGER NOT NULL DEFAULT 0,
+    notified_amount INTEGER NOT NULL DEFAULT 0, approved_at TEXT, notified_at TEXT,
+    PRIMARY KEY (incident_id, customer_id)
+) WITHOUT ROWID;
+CREATE TABLE IF NOT EXISTS notices (
+    id INTEGER PRIMARY KEY, customer_id TEXT NOT NULL, incident_id TEXT NOT NULL,
+    finding_type TEXT NOT NULL, contract_id TEXT NOT NULL, lang TEXT NOT NULL,
+    text TEXT NOT NULL, amount INTEGER NOT NULL, at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS notices_by_customer ON notices (customer_id);
 CREATE TABLE IF NOT EXISTS audit_log (
     id INTEGER PRIMARY KEY, at TEXT NOT NULL, actor TEXT NOT NULL, action TEXT NOT NULL,
     payload_json TEXT NOT NULL, prev_hash TEXT NOT NULL, hash TEXT NOT NULL

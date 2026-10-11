@@ -58,7 +58,11 @@ ComplaintSource = Literal["GENERATED", "JURY"]
 ComplaintStatus = Literal["NEW", "CHECKED", "CONFIRMED", "DISMISSED", "CORRECTED"]
 DraftSource = Literal["template", "llm"]
 PlanStatus = Literal["DRAFT", "APPROVED"]
-MessageKind = Literal["DEBIT", "DEBIT_FAILED", "REVERSAL", "PAYMENT", "PENALTY", "FEE"]
+MessageKind = Literal["DEBIT", "DEBIT_FAILED", "REVERSAL", "PAYMENT", "PENALTY", "FEE", "NOTICE"]
+# How a check of the bank was started, and how much it read (DECISIONS D-039).
+CheckTrigger = Literal["START", "FIRST_USE", "DAILY", "AFTER_CHANGE", "BY_HAND"]
+CheckScope = Literal["ALL", "CHANGED"]
+IncidentStatus = Literal["OPEN", "PROPOSED", "APPROVED", "NOTIFIED"]
 EventKind = Literal["TAKEN", "RECORDED", "CHARGED"]
 EventDebitStatus = Literal["SUCCESS", "FAILED", "REVERSED"]
 RowTreatment = Literal["CORRECT", "WRONG", "CHECKED_CORRECT", "TAKEN_EARLY"]
@@ -261,7 +265,8 @@ class ContractSummary(Shape):
 
 
 class StatementMessage(Shape):
-    """One message the bank sent to the customer. The screen writes the sentence."""
+    """One message the bank sent to the customer. The screen writes the sentence,
+    except for a NOTICE: FeeGuard wrote it in the customer's language (D-040)."""
 
     at: NaiveDatetime
     kind: MessageKind
@@ -270,6 +275,9 @@ class StatementMessage(Shape):
     channel: PaymentChannel | None
     charge_name: str | None
     amount: Som
+    finding_type: DefectType | None = None  # NOTICE only
+    text: str | None = None  # NOTICE only
+    text_lang: LetterLang | None = None  # NOTICE only
 
 
 class CustomerStatement(Shape):
@@ -465,6 +473,9 @@ class CaseResult(Shape):
     decision: Decision | None
     audit_id: Id
     elapsed_ms: Count
+    # The incident each mistake type of this case belongs to (D-040). Empty when the
+    # mistake is isolated, or while the first check of the bank is still running.
+    incidents: list["IncidentLink"] = []
 
 
 # --- Scan ("Find others") ------------------------------------------------
@@ -509,6 +520,95 @@ class ScanResult(Shape):
     cause: Cause | None  # None when there are too few cases to name a cause
     items: list[ScanItem]
     elapsed_ms: Count
+
+
+# --- Checks of the whole bank and incidents (D-039, D-040) ---------------
+
+
+class CheckRun(Shape):
+    """One check of the bank: the full pass, or only the loans that changed since the last one."""
+
+    run_id: Id
+    at: NaiveDatetime
+    trigger: CheckTrigger
+    scope: CheckScope
+    loans_read: Count
+    loans_total: Count
+    new_findings: Count
+    gone_findings: Count
+    elapsed_ms: Count
+    incidents_opened: list[Id]
+    incidents_grown: list[Id]
+
+
+class CheckRunList(Shape):
+    items: list[CheckRun]  # newest first
+    daily_at: str | None  # "02:30" Tashkent time; None when the daily check is off
+    total: Count
+
+
+class Incident(Shape):
+    """One mistake that hit two or more customers: found once by a check, decided once,
+    and every affected customer told, also those who never complained."""
+
+    incident_id: Id
+    finding_type: DefectType
+    status: IncidentStatus
+    opened_at: NaiveDatetime
+    opened_by_run: Id
+    opened_by: CheckTrigger
+    customers: Count
+    contracts: Count
+    complained: Count  # customers
+    silent: Count  # customers
+    total_excess: Som
+    total_affected: Som
+    cause: Cause | None
+    complaints_checked: Count  # checked complaints that found this mistake
+    proposed_by: Actor | None
+    proposed_at: NaiveDatetime | None
+    approved_by: Actor | None
+    approved_at: NaiveDatetime | None
+    approved_customers: Count
+    notified_customers: Count
+    waiting_customers: Count  # affected, not yet in an approved refund
+
+
+class IncidentList(Shape):
+    items: list[Incident]
+
+
+class IncidentCustomer(Shape):
+    customer_id: Id
+    customer_name: str
+    region: str
+    contracts: list[Id]
+    amount_excess: Som
+    amount_affected: Som
+    complained: bool
+    complaint_id: Id | None
+    approved: bool
+    notified: bool
+
+
+class IncidentDetail(Shape):
+    incident: Incident
+    customers: list[IncidentCustomer]
+
+
+class IncidentLink(Shape):
+    """What a case shows about the incident its mistake belongs to."""
+
+    incident_id: Id
+    finding_type: DefectType
+    status: IncidentStatus
+    known_before: bool  # the incident was open before this complaint was checked
+    opened_at: NaiveDatetime
+    opened_by: CheckTrigger
+    customers: Count
+    silent: Count
+    total_excess: Som
+    cause_sentence: str | None
 
 
 # --- Reports -------------------------------------------------------------
@@ -655,3 +755,6 @@ class AuditLog(Shape):
     broken_at: Id | None  # the first entry whose hash does not fit
     entries: list[AuditEntry]  # newest first
     total: Count
+
+
+CaseResult.model_rebuild()

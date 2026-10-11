@@ -19,7 +19,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from . import audit, db, schemas, security
+from . import audit, checks, db, incidents, schemas, security
 from .ai import classifier, drafts, llm, parse_complaint
 from .connector import Bank
 from .engine import investigate as investigation
@@ -74,15 +74,18 @@ log = logging.getLogger(__name__)
 
 
 def _warm(world_id: str) -> None:
-    """Runs the four checks over a whole demo bank once, so the first "Find others" is fast."""
+    """Runs the four checks over a whole demo bank once, so the first "Find others" is fast.
+    It also opens the incidents, before any complaint about them (D-040)."""
     if os.environ.get("SCAN_WARM_UP", "1") == "0":
         return
     try:
-        with Bank(db.worlds_dir() / world_id) as bank:
-            found = scanning.findings_of(world_id, bank)
-        log.info("demo bank %s checked in %.1f s", world_id, found.seconds)
+        checks.run(world_id, "START")
     except Exception:
         log.exception("could not check demo bank %s ahead of time", world_id)
+
+
+def _ready_worlds() -> list[str]:
+    return [item.world_id for item in world.list_worlds() if item.status == "ready"]
 
 
 @asynccontextmanager
@@ -97,7 +100,11 @@ async def _lifespan(_: FastAPI) -> AsyncIterator[None]:
         threading.Thread(target=_warm, args=(DEFAULT_WORLD_ID,), daemon=True).start()
     elif size:
         world.start_build(world.Settings(seed=DEFAULT_WORLD_SEED, size=size), DEFAULT_WORLD_ID, on_ready=_warm)
+    # Every night: only the loans that changed that day are read again (D-039).
+    daily = checks.start_daily(_ready_worlds)
     yield
+    if daily:
+        daily.set()
 
 
 app = FastAPI(
@@ -322,12 +329,13 @@ def tamper(world_id: WorldPath, body: TamperRequest, actor: ActingAs) -> TamperR
         added = sandbox_tamper.add_debit(db.worlds_dir() / world_id, body.contract_id, body.card_id, body.amount)
     except sandbox_tamper.Refused as refused:
         raise ApiError(refused.status, refused.code, refused.message) from None
-    scanning.forget(world_id)  # the kept findings no longer match the bank
     with _store(world_id) as store:
         audit_id = audit.append(store, actor, "DEBIT_ADDED_BY_HAND", {
             "contract_id": body.contract_id, "card_id": body.card_id, "amount": body.amount, "debit_id": added["id"],
         })
-    threading.Thread(target=_warm, args=(world_id,), daemon=True).start()
+    # Only the changed loan is read again, in milliseconds, so the next check sees the debit (D-039).
+    if scanning.peek(world_id) is not None:
+        checks.run(world_id, "AFTER_CHANGE")
     return TamperResult(debit=schemas.DebitRow(**added), audit_id=audit_id)
 
 
@@ -377,6 +385,8 @@ def customer_statement(customer_id: str, world: WorldId) -> CustomerStatement:
                 message(payment.paid_at, "PAYMENT", payment.amount, channel=payment.channel)
         for charge in data.charges:
             message(charge.charged_at, charge.kind, charge.amount, name=charge_name(charge.code))
+    with _store(world) as store:
+        messages.extend(incidents.notices_of(store, customer_id))
     messages.sort(key=lambda one: one.at)
     return CustomerStatement(
         customer=_customer_shape(customer),
@@ -439,6 +449,16 @@ def investigate(complaint_id: str, world: WorldId, actor: ActingAs) -> CaseResul
         if not complaint:
             raise ApiError(404, "NOT_FOUND", "There is no complaint with this number.")
         result = investigation.investigate(bank, complaint)
+        if result.findings:
+            with _store(world) as store:
+                known = incidents.known(store)  # before the check below can open one
+            found = checks.findings(world, bank)
+            with _store(world) as store:
+                # A mistake that hit many customers is already an incident: no new search (D-040).
+                links = incidents.links(store, found, bank, [f.type for f in result.findings], known)
+        else:
+            links = []
+        result = result.model_copy(update={"incidents": links})
     with _store(world) as store:
         audit_id = audit.append(store, actor, "COMPLAINT_CHECKED", {
             "complaint_id": complaint_id, "verdict": result.verdict, "claim_type": result.understood.claim_type,
@@ -463,7 +483,16 @@ def get_case(case_id: str, world: WorldId) -> CaseResult:
         raise ApiError(404, "NOT_FOUND", "This complaint has not been checked yet.")
     stored["decision"] = decision
     stored["complaint"]["status"] = DECIDED[decision["action"]] if decision else "CHECKED"
-    return CaseResult.model_validate(stored)
+    result = CaseResult.model_validate(stored)
+    if result.incidents:
+        # The incident moves on after the check: show where it is now, and keep "known before".
+        before = {link.incident_id: link.known_before for link in result.incidents}
+        with _bank(world) as bank, _store(world) as store:
+            now = incidents.links(store, checks.findings(world, bank), bank, [link.finding_type for link in result.incidents], set())
+        result = result.model_copy(update={
+            "incidents": [link.model_copy(update={"known_before": before.get(link.incident_id, False)}) for link in now],
+        })
+    return result
 
 
 @app.post("/api/cases/{case_id}/decision", response_model=Decision)
@@ -516,7 +545,7 @@ def scan(finding_id: str, world: WorldId, actor: ActingAs) -> ScanResult:
     if not finding_type:
         raise ApiError(404, "NOT_FOUND", "There is no finding with this id.")
     with _bank(world) as bank:
-        result = scanning.scan(finding_type, scanning.findings_of(world, bank), bank)
+        result = scanning.scan(finding_type, checks.findings(world, bank), bank)
     elapsed_ms = round((time.perf_counter() - started) * 1000)
     with _store(world) as store:
         audit.append(store, actor, "OTHERS_SEARCHED", {
@@ -526,12 +555,89 @@ def scan(finding_id: str, world: WorldId, actor: ActingAs) -> ScanResult:
     return result.model_copy(update={"elapsed_ms": elapsed_ms})
 
 
+# --- FeeGuard: checks of the whole bank and incidents (D-039, D-040) ------
+
+
+@app.get("/api/checks", response_model=schemas.CheckRunList)
+def check_history(world: WorldId) -> schemas.CheckRunList:
+    """Every check of the bank, newest first: what it read and what it found."""
+    with _store(world) as store:
+        return checks.history(store)
+
+
+@app.post("/api/checks/run", response_model=schemas.CheckRun)
+def check_now(world: WorldId, actor: ActingAs) -> schemas.CheckRun:
+    """Runs the daily check now: only the loans that changed since the last check are read."""
+    _bank(world).close()  # the demo bank must exist and be ready
+    run = checks.run(world, "BY_HAND")
+    with _store(world) as store:
+        audit.append(store, actor, "CHECK_RUN_BY_HAND", {
+            "run_id": run.run_id, "loans_read": run.loans_read, "new_findings": run.new_findings,
+        })
+    return run
+
+
+@app.get("/api/incidents", response_model=schemas.IncidentList)
+def incident_list(world: WorldId) -> schemas.IncidentList:
+    """Every mistake that hit two or more customers, with who is affected and where the refund stands."""
+    with _bank(world) as bank:
+        found = checks.findings(world, bank)
+        with _store(world) as store:
+            return schemas.IncidentList(items=incidents.all_incidents(store, found, bank))
+
+
+@app.get("/api/incidents/{incident_id}", response_model=schemas.IncidentDetail)
+def incident_detail(incident_id: str, world: WorldId) -> schemas.IncidentDetail:
+    with _bank(world) as bank:
+        found = checks.findings(world, bank)
+        with _store(world) as store:
+            return incidents.detail(store, incident_id, found, bank)
+
+
+def _incident_step(incident_id: str, world: str, actor: str, step: str) -> schemas.Incident:
+    with _bank(world) as bank:
+        found = checks.findings(world, bank)
+        with _store(world) as store:
+            if step == "propose":
+                result = incidents.propose(store, incident_id, actor, found, bank)
+                audit.append(store, actor, "REFUND_PROPOSED", {
+                    "incident_id": incident_id, "customers": result.waiting_customers, "to_return": result.total_excess,
+                })
+            elif step == "approve":
+                result = incidents.approve(store, incident_id, actor, found, bank)
+                audit.append(store, actor, "REFUND_APPROVED", {
+                    "incident_id": incident_id, "customers": result.approved_customers, "to_return": result.total_excess,
+                })
+            else:
+                result, sent = incidents.notify(store, incident_id, found, bank)
+                audit.append(store, actor, "CUSTOMERS_NOTIFIED", {"incident_id": incident_id, "messages": sent})
+    return result
+
+
+@app.post("/api/incidents/{incident_id}/propose", response_model=schemas.Incident)
+def incident_propose(incident_id: str, world: WorldId, actor: ActingAs) -> schemas.Incident:
+    """A complaint officer proposes one refund for every affected customer."""
+    return _incident_step(incident_id, world, actor, "propose")
+
+
+@app.post("/api/incidents/{incident_id}/approve", response_model=schemas.Incident)
+def incident_approve(incident_id: str, world: WorldId, actor: ActingAs) -> schemas.Incident:
+    """The compliance head approves it. The person who proposed it cannot (four eyes)."""
+    return _incident_step(incident_id, world, actor, "approve")
+
+
+@app.post("/api/incidents/{incident_id}/notify", response_model=schemas.Incident)
+def incident_notify(incident_id: str, world: WorldId, actor: ActingAs) -> schemas.Incident:
+    """Sends every approved customer a message in their own language, also those who never complained."""
+    return _incident_step(incident_id, world, actor, "notify")
+
+
 # --- FeeGuard: reports and audit -----------------------------------------
 
 
 def _scans(world_id: str, bank: Bank):
     """The bank-wide scan of each mistake type, for the reports."""
-    found = scanning.findings_of(world_id, bank)
+    found = checks.findings(world_id, bank)
     return lambda finding_type: scanning.scan(finding_type, found, bank)
 
 
@@ -573,7 +679,7 @@ def quarterly(world: WorldId) -> QuarterlyReport:
 )
 def refunds_csv(finding_type: DefectType, world: WorldId, actor: ActingAs) -> Response:
     with _bank(world) as bank:
-        result = scanning.scan(finding_type, scanning.findings_of(world, bank), bank)
+        result = scanning.scan(finding_type, checks.findings(world, bank), bank)
     with _store(world) as store:
         audit.append(store, actor, "REFUND_LIST_DOWNLOADED", {
             "finding_type": finding_type, "to_return": result.total_excess,
@@ -606,7 +712,7 @@ def scoreboard(world_id: WorldPath) -> Scoreboard:
     """FeeGuard's findings over the whole demo bank next to the answer key."""
     started = time.perf_counter()
     with _bank(world_id) as bank, _store(world_id) as store:
-        found = scanning.findings_of(world_id, bank)
+        found = checks.findings(world_id, bank)
         result = scoring.scoreboard(
             world_id, db.worlds_dir() / world_id, bank.seed, bank.size, found, store, world.build_ms(world_id)
         )

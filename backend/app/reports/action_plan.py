@@ -31,12 +31,14 @@ def row_id(finding_type: str) -> str:
 
 
 def confirmed_types(store: sqlite3.Connection) -> set[str]:
-    """Mistake types found on a case whose verdict a person confirmed."""
+    """Mistake types found on a case whose verdict a person confirmed, or whose incident
+    refund a person approved (D-040)."""
     rows = store.execute(
         """SELECT DISTINCT f.type FROM findings f
            JOIN decisions d ON d.case_id = f.case_id
            WHERE d.action = 'CONFIRM'
-              OR (d.action = 'CORRECT' AND d.corrected_verdict = 'SUPPORTED')"""
+              OR (d.action = 'CORRECT' AND d.corrected_verdict = 'SUPPORTED')
+           UNION SELECT finding_type FROM incidents WHERE approved_at IS NOT NULL"""
     )
     return {kind for (kind,) in rows}
 

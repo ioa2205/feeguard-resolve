@@ -214,6 +214,36 @@ class Bank:
         row = self._db.execute(f"{self._COMPLAINT} WHERE m.id = ?", (complaint_id,)).fetchone()
         return self._complaint(row) if row else None
 
+    # --- What changed since the last check (DECISIONS D-039) ---------------------
+    # The demo bank only adds rows, so the highest row number of each table marks how far
+    # a check read. A real bank would give every export row a "changed at" time, so that
+    # a changed row (a reversal, a new schedule) is found the same way.
+    _CHANGING = {"debits": "contract_id", "payments": "contract_id", "charges": "contract_id", "contracts": "id"}
+
+    def marks(self) -> dict[str, int]:
+        """How far each table of money records reaches now, and the bank's date."""
+        marks = {table: self._db.execute(f"SELECT coalesce(max(rowid), 0) FROM {table}").fetchone()[0]
+                 for table in self._CHANGING}
+        marks["as_of"] = self.as_of.toordinal()
+        return marks
+
+    def changed_since(self, marks: dict[str, int]) -> set[str]:
+        """The loans that got a debit, payment or charge after `marks`, the new loans, and,
+        when the bank's date moved on, the loans with an installment that came into view."""
+        changed: set[str] = set()
+        for table, column in self._CHANGING.items():
+            rows = self._db.execute(f"SELECT DISTINCT {column} FROM {table} WHERE rowid > ?", (marks.get(table, 0),))
+            changed.update(contract_id for (contract_id,) in rows)
+        then = marks.get("as_of", self.as_of.toordinal())
+        if then != self.as_of.toordinal():
+            low, high = sorted((date.fromordinal(then) + LOOK_AHEAD, self.as_of + LOOK_AHEAD))
+            rows = self._db.execute(
+                "SELECT DISTINCT contract_id FROM schedule_items WHERE due_date > ? AND due_date <= ?",
+                (low.isoformat(), high.isoformat()),
+            )
+            changed.update(contract_id for (contract_id,) in rows)
+        return changed
+
     def complaints(self) -> list[Complaint]:
         """Every complaint, the oldest first."""
         return [self._complaint(row) for row in self._db.execute(f"{self._COMPLAINT} ORDER BY m.created_at, m.id")]

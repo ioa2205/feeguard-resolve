@@ -37,6 +37,17 @@ PRESETS = {
     ("post", "/api/presets/{preset_id}"),
 }
 
+# Added by DECISIONS D-039 and D-040: checks of changed loans, and incidents.
+CHECKS_AND_INCIDENTS = {
+    ("get", "/api/checks"),
+    ("post", "/api/checks/run"),
+    ("get", "/api/incidents"),
+    ("get", "/api/incidents/{incident_id}"),
+    ("post", "/api/incidents/{incident_id}/propose"),
+    ("post", "/api/incidents/{incident_id}/approve"),
+    ("post", "/api/incidents/{incident_id}/notify"),
+}
+
 
 def _published(client):
     paths = client.get("/api/openapi.json").json()["paths"]
@@ -44,7 +55,7 @@ def _published(client):
 
 
 def test_the_published_paths_are_exactly_the_frozen_list(client):
-    assert _published(client) == PART_10 | ADDED | PRESETS
+    assert _published(client) == PART_10 | ADDED | PRESETS | CHECKS_AND_INCIDENTS
 
 
 def test_every_path_is_built_and_none_answers_501_any_more():

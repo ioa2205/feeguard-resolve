@@ -12,6 +12,7 @@ runs at night, so the hour tells nothing, and the billing run already is the
 date of a debit.
 """
 
+import sys
 from collections import Counter
 from dataclasses import dataclass, field
 
@@ -60,11 +61,14 @@ class Profile:
     counts: Counter = field(default_factory=Counter)
 
     def add(self, traits: tuple[Trait, ...], times: int = 1) -> None:
-        if times <= 0:
+        """`times` below 0 takes events away again, when a loan is checked anew."""
+        if times == 0:
             return
         self.total += times
         for trait in traits:
             self.counts[trait] += times
+            if self.counts[trait] == 0:
+                del self.counts[trait]
 
 
 def contract_traits(data: ContractData, region: str) -> tuple[Trait, ...]:
@@ -84,19 +88,47 @@ def _run_name(run: Run) -> str:
     return first.batch_run_id or f"run of {first.created_at.date().isoformat()}"
 
 
-def count_eligible(timeline: Timeline, region: str, profiles: dict[str, Profile]) -> None:
-    """Adds the eligible events of one loan to the profile of each mistake type."""
+@dataclass(frozen=True, slots=True)
+class Eligible:
+    """The eligible events of one loan, small enough to keep for every loan of a bank,
+    so that a loan checked anew can be taken out of the profiles and put back."""
+
+    shared: tuple[Trait, ...]
+    runs: tuple[str, ...]  # billing runs: double debit
+    debit_runs: tuple[str, ...]  # the run of each successful debit: early debit
+    channels: tuple[str, ...]  # the channel of each payment: late posting
+
+
+def eligible_of(timeline: Timeline, region: str) -> Eligible:
     data = timeline.data
-    shared = contract_traits(data, region)
-    for run in timeline.runs:
-        profiles[double_debit.TYPE].add((*shared, ("batch_run", _run_name(run))))
-    for debit in data.debits:
-        if debit.status == SUCCESS:
-            run = debit.batch_run_id or f"run of {debit.created_at.date().isoformat()}"
-            profiles[early_debit.TYPE].add((*shared, ("batch_run", run)))
-    for payment in data.payments:
-        profiles[late_posting.TYPE].add((*shared, ("channel", payment.channel)))
-    profiles[illegal_fee.TYPE].add(shared)
+    return Eligible(
+        shared=contract_traits(data, region),
+        runs=tuple(sys.intern(_run_name(run)) for run in timeline.runs),
+        debit_runs=tuple(
+            sys.intern(debit.batch_run_id or f"run of {debit.created_at.date().isoformat()}")
+            for debit in data.debits if debit.status == SUCCESS
+        ),
+        channels=tuple(sys.intern(payment.channel) for payment in data.payments),
+    )
+
+
+def apply(eligible: Eligible, profiles: dict[str, Profile], sign: int = 1) -> None:
+    """Adds (sign 1) or takes away (sign -1) the eligible events of one loan."""
+    shared = eligible.shared
+    for run, times in Counter(eligible.runs).items():
+        profiles[double_debit.TYPE].add((*shared, ("batch_run", run)), sign * times)
+    for run, times in Counter(eligible.debit_runs).items():
+        profiles[early_debit.TYPE].add((*shared, ("batch_run", run)), sign * times)
+    for channel, times in Counter(eligible.channels).items():
+        profiles[late_posting.TYPE].add((*shared, ("channel", channel)), sign * times)
+    profiles[illegal_fee.TYPE].add(shared, sign)
+
+
+def count_eligible(timeline: Timeline, region: str, profiles: dict[str, Profile]) -> Eligible:
+    """Adds the eligible events of one loan to the profile of each mistake type."""
+    eligible = eligible_of(timeline, region)
+    apply(eligible, profiles)
+    return eligible
 
 
 def traits_of(finding: Finding, data: ContractData, region: str) -> tuple[Trait, ...]:
