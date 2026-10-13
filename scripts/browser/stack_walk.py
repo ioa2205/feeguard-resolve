@@ -2,10 +2,10 @@
 
     python scripts/browser/stack_walk.py https://<domain> [folder for pictures]
 
-Opens the Complaints screen, checks complaint C-0016 of the default demo bank (seed 2026: taken twice),
-opens Find others and the Scoreboard, and reports every Content-Security-Policy violation and
-script error the pages raised. It presses no decision button, so it can run against the public site
-before the demo. Checking a complaint writes one audit entry, as it does for any visitor.
+Opens the landing page and the Complaints screen, opens complaint C-0016 of the main demo bank
+(taken twice), opens Find others and the Results, and reports every Content-Security-Policy
+violation and script error the pages raised. It presses no decision button, so it can run against
+the public site. Find others writes one audit entry, as it does for any visitor.
 Accepts the self-signed certificate of a local run (Caddy with DOMAIN=localhost).
 Windows with Microsoft Edge; needs `websocket-client`.
 """
@@ -26,6 +26,7 @@ document.addEventListener('securitypolicyviolation', e => window.__problems.push
 window.addEventListener('error', e => window.__problems.push('error ' + e.message));
 window.addEventListener('unhandledrejection', e => window.__problems.push('rejection ' + String(e.reason)));
 """
+HEADLINE = "[...document.querySelectorAll('.headline > div')].map(x => x.innerText.replace(/\\s+/g, ' ')).join('; ')"
 
 
 def step(text):
@@ -52,24 +53,26 @@ def main() -> int:
                 b.shot(str(SHOTS / f"{name}.png"))
             return took, fonts
 
-        took, fonts = visit("/", "Complaints about loan payments", "stack-complaints-1280x720")
-        step(f"Complaints screen shown after {took:.1f} s, {fonts} font files loaded")
+        took, fonts = visit("/en", "How it works", "stack-landing-1280x720")
+        step(f"Landing page shown after {took:.1f} s, {fonts} font files loaded")
+        b.js("localStorage.setItem('feeguard.ui-lang', 'en'); true")
 
-        took, _ = visit("/case/C-0016", "CUSTOMER IS RIGHT", "stack-case-c0016-1280x720", timeout=120)
-        line = next((x for x in b.text().split("\n") if "To return" in x), "")
-        step(f"Case C-0016: Customer is right, {line.strip()}, {took:.1f} s after opening")
+        took, _ = visit("/app", "FeeGuard checks each one", "stack-complaints-1280x720")
+        step(f"Complaints screen shown after {took:.1f} s")
 
-        b.click("Find others like this", tag="a, button")
+        took, _ = visit("/app/case/C-0016", "CUSTOMER IS RIGHT", "stack-complaint-c0016-1280x720", timeout=120)
+        line = next((x for x in b.text().split("\n") if "to return to the customer" in x), "")
+        step(f"Complaint C-0016: Customer is right, {line.strip()}, {took:.1f} s after opening")
+
+        b.click("Find others", tag="a.btn")
         b.wait_text("never complained", timeout=60)
-        problems.extend(f"/scan: {p}" for p in b.js("window.__problems || []"))
+        problems.extend(f"/app/others: {p}" for p in b.js("window.__problems || []"))
         if SHOTS:
             b.shot(str(SHOTS / "stack-find-others-1280x720.png"))
-        head = [x.strip() for x in b.text().split("\n") if x.strip()[:1].isdigit()]
-        step("Find others: " + " ".join(head[:3]))
+        step("Find others: " + b.js(HEADLINE))
 
-        took, _ = visit("/sandbox/scoreboard", "hidden mistakes", "stack-scoreboard-1280x720", timeout=120)
-        line = next((x for x in b.text().split("\n") if x.strip().startswith("FeeGuard found")), "")
-        step(f"Scoreboard: {line.strip()} ({took:.1f} s)")
+        took, _ = visit("/app/results", "hidden mistakes found", "stack-results-1280x720", timeout=120)
+        step(f"Results: {b.js(HEADLINE)} ({took:.1f} s)")
     finally:
         b.close()
     step(f"Problems raised by the pages: {len(problems)}")

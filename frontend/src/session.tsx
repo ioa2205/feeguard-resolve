@@ -7,8 +7,6 @@ import type { ReactNode } from 'react'
 import { api, setActor as sendActor, setWorld as sendWorld } from './api'
 import { DEFAULT_WORLD_ID } from './types'
 import type { Actor, Health, Preset, World } from './types'
-import { tx } from './i18n'
-import { MISTAKE } from './words'
 
 interface Session {
   actor: Actor
@@ -20,14 +18,13 @@ interface Session {
   /** Loads the list of demo banks again, after one was built. */
   refreshWorlds: () => Promise<void>
   health: Health | null
-  /** The real-case presets; empty while loading or when the server did not answer. */
+  /** The public cases; empty while loading or when the server did not answer. */
   presets: Preset[]
-  /** What a demo bank is called on screen. */
-  bankName: (worldId: string) => string
 }
 
 const SessionContext = createContext<Session | null>(null)
-const ACTORS: Actor[] = ['officer', 'compliance', 'jury']
+// The two people of the product. A visitor acts as one of them; no other role is offered.
+const ACTORS: Actor[] = ['officer', 'compliance']
 
 // A private window may refuse storage. The choice then lasts for this visit only.
 function remembered(key: string): string | null {
@@ -104,11 +101,6 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       refreshWorlds,
       health,
       presets,
-      bankName: (id) => {
-        if (id === DEFAULT_WORLD_ID) return 'Default'
-        const preset = presets.find((item) => item.world_id === id)
-        return preset ? `Public case: ${tx(MISTAKE[preset.mistake]).toLowerCase()}` : id
-      },
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [actor, worldId, worlds, health, presets],

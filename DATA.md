@@ -1,4 +1,4 @@
-# FeeGuard Resolve — Data
+# FeeGuard: data
 
 **All customer data in this project is synthetic. There is no real personal data anywhere: not in the demo, not in the tests, not in the repository.**
 
@@ -6,7 +6,7 @@
 
 ## 1. What is fake
 
-Everything about people and their money is made by our own generator, the "Sandbox Bank".
+Everything about people and their money is made by our own generator, which builds the demo bank.
 
 | Data | How it is made |
 |---|---|
@@ -39,7 +39,7 @@ Fields that do not exist anywhere in the system: passport number, PINFL, full ca
 
 ## 4. How the fake bank is built
 
-1. The jury (or we) choose a seed, a size (5,000 or 20,000 loans), which mistakes to plant and how often.
+1. A visitor (or we) choose a bank number (the seed), a size (5,000 or 20,000 loans), which mistakes to plant and how often.
 2. The generator creates customers, cards, loans and schedules, then a normal payment history.
 3. It adds normal "noise" that is not a mistake: a failed debit followed by one successful retry, a duplicate debit the bank already reversed, partial payments, customers who really pay late.
 4. It plants the mistakes and the traps and writes them to an answer key.

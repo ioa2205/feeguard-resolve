@@ -95,7 +95,6 @@ export function countOf(n: number, forms: Forms): string {
 }
 
 export const DAY: Forms = { en: ['day', 'days'], uz: 'kun', ru: ['день', 'дня', 'дней'] }
-export const ROW: Forms = { en: ['row', 'rows'], uz: 'qator', ru: ['строка', 'строки', 'строк'] }
 export const LOAN: Forms = { en: ['loan', 'loans'], uz: 'kredit', ru: ['кредит', 'кредита', 'кредитов'] }
 export const MONTH: Forms = { en: ['month', 'months'], uz: 'oy', ru: ['месяц', 'месяца', 'месяцев'] }
 export const CUSTOMER: Forms = { en: ['customer', 'customers'], uz: 'mijoz', ru: ['клиент', 'клиента', 'клиентов'] }
@@ -118,9 +117,9 @@ export function formatTimes(lift: number): string {
   return `${shown} times`
 }
 
-/** "1.4 s" · "1,4 s" in Russian. */
+/** "1.4 s" · "1,4 с" in Russian. Under a second it keeps two digits, so a fast answer is not "0.0 s". */
 export function formatSeconds(ms: number, digits = 1): string {
-  const value = (ms / 1000).toFixed(digits)
+  const value = (ms / 1000).toFixed(ms < 950 ? Math.max(digits, 2) : digits)
   return lang === 'ru' ? `${value.replace('.', ',')} с` : `${value} s`
 }
 

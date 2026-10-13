@@ -7,7 +7,6 @@ import type {
   CheckTrigger,
   ClaimType,
   ComplaintChannel,
-  ComplaintStatus,
   DecisionAction,
   DefectType,
   DraftSource,
@@ -33,28 +32,29 @@ export const MISTAKE: Record<DefectType, Words> = {
   ILLEGAL_FEE: { en: 'Fee not allowed', uz: 'Ruxsat etilmagan komissiya', ru: 'Недопустимая комиссия' },
 }
 
+/** The mistake as a sentence, for titles: "A payment taken twice". */
+export const MISTAKE_LONG: Record<DefectType, Words> = {
+  DOUBLE_DEBIT: { en: 'A payment taken twice', uz: 'Toʻlov ikki marta yechilgan', ru: 'Платёж списан дважды' },
+  EARLY_DEBIT: { en: 'A payment taken before its date', uz: 'Toʻlov muddatidan oldin yechilgan', ru: 'Платёж списан раньше срока' },
+  LATE_POSTING: { en: 'A payment recorded late, then fined', uz: 'Toʻlov kech yozilib, jarima solingan', ru: 'Платёж зачислен поздно, затем штраф' },
+  ILLEGAL_FEE: { en: 'A fee that is not allowed', uz: 'Ruxsat etilmagan komissiya', ru: 'Недопустимая комиссия' },
+}
+
 export const CLAIM: Record<ClaimType, Words> = {
   ...MISTAKE,
   OTHER: { en: 'Something else', uz: 'Boshqa masala', ru: 'Другое' },
 }
 
+/** Who read a complaint: the AI fills a form, or simple rules do when it is off or too slow. */
 export const READ_BY: Record<Mode, Words> = {
-  llm: { en: 'the AI', uz: 'sunʼiy intellekt', ru: 'ИИ' },
-  rules: { en: 'rules (the AI is off)', uz: 'qoidalar (SI oʻchiq)', ru: 'правила (ИИ выключен)' },
-}
-
-export const STATE: Record<ComplaintStatus, Words> = {
-  NEW: { en: 'Not checked yet', uz: 'Hali tekshirilmagan', ru: 'Ещё не проверена' },
-  CHECKED: { en: 'Checked, waiting for a decision', uz: 'Tekshirildi, qaror kutilmoqda', ru: 'Проверена, ждёт решения' },
-  CONFIRMED: { en: 'Confirmed', uz: 'Tasdiqlandi', ru: 'Подтверждена' },
-  DISMISSED: { en: 'Dismissed', uz: 'Rad etildi', ru: 'Отклонена' },
-  CORRECTED: { en: 'Corrected', uz: 'Tuzatildi', ru: 'Исправлена' },
+  llm: { en: 'Read by the AI', uz: 'Sunʼiy intellekt oʻqidi', ru: 'Прочитал ИИ' },
+  rules: { en: 'Read by rules', uz: 'Qoidalar oʻqidi', ru: 'Прочитали правила' },
 }
 
 export const ACTING_AS: Record<Actor, Words> = {
-  officer: { en: 'Complaint officer', uz: 'Shikoyatlar xodimi', ru: 'Сотрудник по жалобам' },
+  officer: { en: 'Complaints officer', uz: 'Shikoyatlar xodimi', ru: 'Сотрудник по жалобам' },
   compliance: { en: 'Compliance head', uz: 'Komplayens rahbari', ru: 'Руководитель комплаенса' },
-  jury: { en: 'Jury', uz: 'Hakamlar', ru: 'Жюри' },
+  jury: { en: 'Visitor', uz: 'Tashrif buyuruvchi', ru: 'Посетитель' },
 }
 
 export const RECEIVED_BY: Record<ComplaintChannel, Words> = {
@@ -105,12 +105,13 @@ export const INCIDENT_STATUS: Record<IncidentStatus, Words> = {
   NOTIFIED: { en: 'Every affected customer told', uz: 'Barcha zarar koʻrgan mijozlarga xabar berildi', ru: 'Все пострадавшие клиенты уведомлены' },
 }
 
+/** Which check of all loans found something: "found 11 Oct, by the first check of all loans". */
 export const CHECK_TRIGGER: Record<CheckTrigger, Words> = {
-  START: { en: 'at start-up', uz: 'ishga tushganda', ru: 'при запуске' },
-  FIRST_USE: { en: 'at first use', uz: 'birinchi foydalanishda', ru: 'при первом использовании' },
-  DAILY: { en: 'daily check', uz: 'kunlik tekshiruv', ru: 'ежедневная проверка' },
-  AFTER_CHANGE: { en: 'after a change in the bank', uz: 'bankdagi oʻzgarishdan keyin', ru: 'после изменения в банке' },
-  BY_HAND: { en: 'started by a person', uz: 'xodim ishga tushirdi', ru: 'запущена вручную' },
+  START: { en: 'by the first check of all loans', uz: 'barcha kreditlarning birinchi tekshiruvida', ru: 'первой проверкой всех кредитов' },
+  FIRST_USE: { en: 'by the first check of all loans', uz: 'barcha kreditlarning birinchi tekshiruvida', ru: 'первой проверкой всех кредитов' },
+  DAILY: { en: 'by the daily check', uz: 'kunlik tekshiruvda', ru: 'ежедневной проверкой' },
+  AFTER_CHANGE: { en: 'by the check after a change in the bank', uz: 'bankdagi oʻzgarishdan keyingi tekshiruvda', ru: 'проверкой после изменения в банке' },
+  BY_HAND: { en: 'by a check a person started', uz: 'xodim boshlagan tekshiruvda', ru: 'проверкой, запущенной вручную' },
 }
 
 /** The names of the bank's charges as the server sends them in English. */
@@ -123,6 +124,17 @@ const CHARGE_NAMES: Record<string, Words> = {
 export function chargeName(name: string | null | undefined): Words | null {
   if (!name) return null
   return CHARGE_NAMES[name] ?? { en: name, uz: name, ru: name }
+}
+
+/** The bank's loan products, by their code. An unknown code shows the name the bank sent. */
+const PRODUCTS: Record<string, Words> = {
+  CONS: { en: 'Consumer loan', uz: 'Isteʼmol krediti', ru: 'Потребительский кредит' },
+  MICRO: { en: 'Microloan', uz: 'Mikroqarz', ru: 'Микрозаём' },
+  AUTO: { en: 'Car loan', uz: 'Avtokredit', ru: 'Автокредит' },
+}
+
+export function productName(code: string, sent: string): Words {
+  return PRODUCTS[code] ?? { en: sent, uz: sent, ru: sent }
 }
 
 /** A legal text nobody has verified yet is shown as "To verify". */

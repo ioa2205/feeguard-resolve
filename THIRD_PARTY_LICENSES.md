@@ -1,13 +1,14 @@
 # Third-party licences
 
-> **Status on 10 Oct 2026:** the backend versions are pinned in `backend/requirements.txt` and the frontend versions in `frontend/package-lock.json`. shadcn/ui and Recharts were planned but are not used: the screens are built from our own components and tables (checked against `frontend/package.json` on 11 Oct 2026). Before submission (task S5) this file is checked again against the real lock files, and exact versions are added.
+> **Status on 14 Oct 2026:** the backend versions are pinned in `backend/requirements.txt` and the frontend versions in `frontend/package-lock.json`. The screens are built from our own components, styles and canvas chart; no component, chart or CSS library is used (checked against `frontend/package.json` on 14 Oct 2026).
 
 ## AI model
 
 | Component | Licence | Note |
 |---|---|---|
-| Local AI model | **Not chosen yet** | Chosen in task B1. The licence must allow commercial use |
-| Ollama (runs the model) | MIT | |
+| Gemini API (`gemini-3.5-flash`) | Google's API terms | Reads complaints and rewords letters in the demo, on invented data only. Off without a key |
+| Local AI model | **Not chosen yet** | A bank plugs one into the same module. The licence must allow commercial use |
+| Ollama (runs a local model) | MIT | |
 
 ## Backend
 
@@ -31,17 +32,15 @@
 | React Router | MIT |
 | Vite | MIT |
 | TypeScript | Apache-2.0 |
-| Tailwind CSS | MIT |
 
 ## Fonts
 
-Fonts are installed from npm, bundled into our own build and served from our own server. Nothing is loaded from a font website. The deck PDF embeds the same Fira Sans and Fira Sans Condensed faces, which the SIL Open Font License allows.
+Fonts are installed from npm (Fontsource), bundled into our own build and served from our own server. Nothing is loaded from a font website.
 
-| Font | Licence |
-|---|---|
-| Fira Sans | SIL Open Font License 1.1 |
-| Fira Sans Condensed | SIL Open Font License 1.1 |
-| Charis SIL | SIL Open Font License 1.1 |
+| Font | Used for | Licence |
+|---|---|---|
+| Onest 5.3.1 | Every screen: FeeGuard's own words and the figures | SIL Open Font License 1.1 |
+| Source Serif 4 5.3.1 | The customer's own words, letters and contract clauses | SIL Open Font License 1.1 |
 
 ## Deploy
 

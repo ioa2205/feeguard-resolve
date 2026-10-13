@@ -25,7 +25,8 @@
 
 	handle {
 		root * /srv
-		try_files {path} /index.html
+		# /uz, /ru and /en get the page with link previews in that language (V2_PLAN W2).
+		try_files {path} {path}.html /index.html
 		file_server
 	}
 }

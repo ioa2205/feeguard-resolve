@@ -1,10 +1,10 @@
-# FeeGuard Resolve
+# FeeGuard
 
 A tool for bank staff. It checks whether a customer's loan-payment complaint is true, finds every other customer hit by the same mistake, and writes the fix plan and report that Central Bank Rule 3030-12 requires.
 
-WIUT Hackathon 2026 · FinTech / AI in Finance · Startup mode
+First built at the WIUT Hackathon 2026 (FinTech / AI in Finance) under the name FeeGuard Resolve. This is version 2, made after it.
 
-> **Status on 11 Oct 2026, 10:51 Tashkent:** every screen and every API path is built, and a clean Docker build of the repository runs them. On the 20,000-loan demo bank the four checks found all 2,832 hidden mistakes with 0 false alarms and 0 of 20 look-alikes flagged ([docs/EVAL.md](docs/EVAL.md)). In the demo, complaints are read and letters reworded by Gemini (`gemini-3.5-flash`, about 2 s a complaint) on invented data; without it, rules and a trained classifier read them and letters come from templates. Not measured: the test on 100 hand-written complaints and the stopwatch test. The three legal facts are still marked TO VERIFY.
+> **Status on 14 Oct 2026:** version 2 has a landing page that tells one real case from the demo bank, and every product screen redesigned, in Uzbek, Russian and English. On the 20,000-loan demo bank the four checks found all 2,832 hidden mistakes with 0 false alarms and 0 of 20 look-alikes flagged ([docs/EVAL.md](docs/EVAL.md), measured 11 Oct 2026). With a Gemini key, complaints are read and letters reworded by Gemini (`gemini-3.5-flash`) on invented data; without it, rules and a trained classifier read them and letters come from templates. Not measured: the test on 100 hand-written complaints and the stopwatch test. The three legal facts are still marked TO VERIFY.
 
 ## The problem
 
@@ -46,16 +46,25 @@ Any other complaint is marked "out of scope" and goes to a person.
 
 ## The demo
 
-The demo has two parts.
+No account is needed. Every customer, card and payment is invented.
 
-- **Sandbox Bank** is a fake bank. It creates invented customers, loans and payments, and hides the four mistakes among them, together with "traps": cases that look wrong but are correct. The jury controls it.
-- **FeeGuard** is the product. It reads the Sandbox Bank the same way it would read a real bank. It cannot see where the mistakes were hidden.
+| Address | What it is |
+|---|---|
+| `/` (and `/uz`, `/ru`, `/en`) | The landing page: one complaint from the demo bank, how FeeGuard checks it, and everyone else the same mistake hit |
+| `/app` | Complaints: who is waiting, what they say, and the verdict when FeeGuard has checked |
+| `/app/case/<id>` | One complaint in four steps: read, check, decide, find others |
+| `/app/others/<finding>` | Find others: every loan with the same mistake on one clock, the cause and the refund list |
+| `/app/incidents` | One problem, one decision for every customer it hit, and every customer told |
+| `/app/report` | The plan of measures and the quarterly analysis of complaints, ready to print |
+| `/app/audit` | Every action, with a hash chain |
+| `/app/phone` | The customer's phone: the bank's messages, and where a complaint is written |
+| `/app/demo`, `/app/results` | Demo tools: build a demo bank with hidden mistakes, load a public case, see the answer key |
 
-Live demo: _link comes here_. No account is needed.
+The demo bank is made by our own generator. It creates invented customers, loans and payments and hides the four mistakes among them, together with look-alike cases that seem wrong but are correct. FeeGuard reads it the way it would read a real bank and cannot see where the mistakes were hidden.
 
 ## Run it yourself
 
-These steps were run on Windows with Python 3.12 and Node 24. On 11 Oct 2026 a fresh clone was also built and tested in clean Linux containers (Python 3.11, Node 22): 346 tests passed, the contract check passed, and the screens ran over HTTPS behind Caddy.
+These steps were run on Windows with Python 3.12 and Node 24; on 14 Oct 2026 the backend had 371 tests passing. On 11 Oct 2026 a fresh clone of version 1 was also built and tested in clean Linux containers (Python 3.11, Node 22), and its screens ran over HTTPS behind Caddy.
 
 The backend and the frontend are two separate apps. Each runs alone.
 

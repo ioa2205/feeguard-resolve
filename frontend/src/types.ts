@@ -283,6 +283,8 @@ export interface Complaint {
   /** null until the answer deadline is verified. Show "To verify". */
   answer_due: Day | null
   verdict: Verdict | null
+  /** What FeeGuard's check found to return; null until checked. A person's correction is in the case. */
+  to_return?: Som | null
 }
 
 export interface ComplaintList {
@@ -483,6 +485,18 @@ export interface Cause {
   suggested_fix_t?: Words | null
 }
 
+/** One debit behind a finding, for the timeline of every affected loan (D-045). */
+export interface ScanDebit {
+  at: Moment
+  /** Masked label, "HUMO ··4471". */
+  card: string
+  amount: Som
+  status: DebitStatus
+  returned: boolean
+  /** The billing run that took it. */
+  batch_run_id?: string | null
+}
+
 export interface ScanItem {
   contract_id: string
   customer_id: string
@@ -494,6 +508,10 @@ export interface ScanItem {
   days_early: number | null
   complained: boolean
   complaint_id: string | null
+  /** The installment's due date (D-045). */
+  due_date?: Day | null
+  /** Oldest first (D-045). */
+  debits?: ScanDebit[]
 }
 
 export interface ScanResult {
@@ -746,4 +764,32 @@ export interface IncidentLink {
   total_excess: Som
   cause_sentence: string | null
   cause_sentence_t?: Words | null
+}
+
+// --- Landing page (D-048) ---
+
+/** One loan of the landing page's strip: the debits kept from one installment, oldest first. */
+export interface StoryRow {
+  contract_id: string
+  customer_name: string
+  complained: boolean
+  due_date: Day | null
+  amount_excess: Som
+  taken: Moment[]
+  /** Masked labels, "HUMO ··4471", one per debit. */
+  cards: string[]
+  /** The billing run that took the first one. */
+  batch_run_id?: string | null
+}
+
+/** The one case the landing page tells, on the default demo bank, and everyone else the same mistake hit. */
+export interface LandingStory {
+  case: CaseResult
+  rows: StoryRow[]
+  incident: Incident
+  /** The log from the first entry about the complaint, oldest first. */
+  trail: AuditEntry[]
+  chain_intact: boolean
+  /** Loans in the demo bank. */
+  loans: number
 }

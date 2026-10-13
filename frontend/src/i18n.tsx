@@ -44,6 +44,16 @@ function remembered(): UiLang {
   } catch {
     // A private window may refuse storage.
   }
+  return fromBrowser()
+}
+
+/** On a first visit, the browser's own language when it is Uzbek or Russian (V2_PLAN W2), else English. */
+function fromBrowser(): UiLang {
+  const wanted = typeof navigator === 'undefined' ? [] : navigator.languages?.length ? navigator.languages : [navigator.language]
+  for (const tag of wanted) {
+    const code = tag?.toLowerCase().slice(0, 2)
+    if (code === 'uz' || code === 'ru' || code === 'en') return code
+  }
   return 'en'
 }
 

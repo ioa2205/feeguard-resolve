@@ -129,8 +129,9 @@ export const api = {
   reveal: (world: string) => call<Reveal>('GET', `/api/eval/${id(world)}/reveal`, mocks.reveal),
 
   // FeeGuard
-  complaints: (status?: ComplaintStatus) =>
-    call<ComplaintList>('GET', `/api/complaints${status ? `?status=${status}` : ''}`, mocks.complaints),
+  /** `limit` up to 500; the list is ordered by who must be answered first. */
+  complaints: (status?: ComplaintStatus, limit = 100) =>
+    call<ComplaintList>('GET', `/api/complaints?limit=${limit}${status ? `&status=${status}` : ''}`, mocks.complaints),
   investigate: (complaintId: string) =>
     call<CaseResult>('POST', `/api/cases/${id(complaintId)}/investigate`, sampleCase(complaintId)),
   getCase: (caseId: string) => call<CaseResult>('GET', `/api/cases/${id(caseId)}`, sampleCase(caseId)),
