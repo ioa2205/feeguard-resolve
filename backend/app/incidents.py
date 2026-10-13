@@ -307,66 +307,66 @@ NOTICE = {
         double_debit.TYPE: (
             "Hurmatli {name}! Bank oʻz tekshiruvida {loan} kreditingiz boʻyicha toʻlov kartangizdan ikki marta "
             "yechilganini aniqladi. Ortiqcha olingan {amount} kartangizga qaytariladi. Buning uchun shikoyat "
-            "yozishingiz shart emas. Noqulaylik uchun uzr soʻraymiz. Sandbox Bank"
+            "yozishingiz shart emas. Noqulaylik uchun uzr soʻraymiz. Demo Bank"
         ),
         early_debit.TYPE: (
             "Hurmatli {name}! Bank oʻz tekshiruvida {loan} kreditingiz boʻyicha {amount} toʻlov muddatidan oldin "
             "yechilganini aniqladi. Yechish sanalari tuzatiladi. Buning uchun shikoyat yozishingiz shart emas. "
-            "Noqulaylik uchun uzr soʻraymiz. Sandbox Bank"
+            "Noqulaylik uchun uzr soʻraymiz. Demo Bank"
         ),
         late_posting.TYPE: (
             "Hurmatli {name}! Bank oʻz tekshiruvida {loan} kreditingiz boʻyicha toʻlovingiz oʻz vaqtida qilingan, "
             "lekin kech qayd etilganini aniqladi. Shu sababli olingan {amount} jarima qaytariladi. Buning uchun "
-            "shikoyat yozishingiz shart emas. Noqulaylik uchun uzr soʻraymiz. Sandbox Bank"
+            "shikoyat yozishingiz shart emas. Noqulaylik uchun uzr soʻraymiz. Demo Bank"
         ),
         illegal_fee.TYPE: (
             "Hurmatli {name}! Bank oʻz tekshiruvida {loan} kreditingiz boʻyicha shartnomada koʻzda tutilmagan "
             "{amount} komissiya olinganini aniqladi. Bu summa qaytariladi. Buning uchun shikoyat yozishingiz shart "
-            "emas. Noqulaylik uchun uzr soʻraymiz. Sandbox Bank"
+            "emas. Noqulaylik uchun uzr soʻraymiz. Demo Bank"
         ),
     },
     "uz_cyrl": {
         double_debit.TYPE: (
             "Ҳурматли {name}! Банк ўз текширувида {loan} кредитингиз бўйича тўлов картангиздан икки марта "
             "ечилганини аниқлади. Ортиқча олинган {amount} картангизга қайтарилади. Бунинг учун шикоят "
-            "ёзишингиз шарт эмас. Ноқулайлик учун узр сўраймиз. Sandbox Bank"
+            "ёзишингиз шарт эмас. Ноқулайлик учун узр сўраймиз. Demo Bank"
         ),
         early_debit.TYPE: (
             "Ҳурматли {name}! Банк ўз текширувида {loan} кредитингиз бўйича {amount} тўлов муддатидан олдин "
             "ечилганини аниқлади. Ечиш саналари тузатилади. Бунинг учун шикоят ёзишингиз шарт эмас. "
-            "Ноқулайлик учун узр сўраймиз. Sandbox Bank"
+            "Ноқулайлик учун узр сўраймиз. Demo Bank"
         ),
         late_posting.TYPE: (
             "Ҳурматли {name}! Банк ўз текширувида {loan} кредитингиз бўйича тўловингиз ўз вақтида қилинган, "
             "лекин кеч қайд этилганини аниқлади. Шу сабабли олинган {amount} жарима қайтарилади. Бунинг учун "
-            "шикоят ёзишингиз шарт эмас. Ноқулайлик учун узр сўраймиз. Sandbox Bank"
+            "шикоят ёзишингиз шарт эмас. Ноқулайлик учун узр сўраймиз. Demo Bank"
         ),
         illegal_fee.TYPE: (
             "Ҳурматли {name}! Банк ўз текширувида {loan} кредитингиз бўйича шартномада кўзда тутилмаган "
             "{amount} комиссия олинганини аниқлади. Бу сумма қайтарилади. Бунинг учун шикоят ёзишингиз шарт "
-            "эмас. Ноқулайлик учун узр сўраймиз. Sandbox Bank"
+            "эмас. Ноқулайлик учун узр сўраймиз. Demo Bank"
         ),
     },
     "ru": {
         double_debit.TYPE: (
             "Уважаемый(ая) {name}! При собственной проверке банк обнаружил, что платёж по кредиту {loan} был "
             "списан с вашей карты дважды. Лишние {amount} будут возвращены на вашу карту. Писать жалобу не нужно. "
-            "Приносим извинения за неудобства. Sandbox Bank"
+            "Приносим извинения за неудобства. Demo Bank"
         ),
         early_debit.TYPE: (
             "Уважаемый(ая) {name}! При собственной проверке банк обнаружил, что по кредиту {loan} {amount} были "
             "списаны раньше срока. Даты списаний будут исправлены. Писать жалобу не нужно. Приносим извинения за "
-            "неудобства. Sandbox Bank"
+            "неудобства. Demo Bank"
         ),
         late_posting.TYPE: (
             "Уважаемый(ая) {name}! При собственной проверке банк обнаружил, что ваш платёж по кредиту {loan} был "
             "внесён вовремя, но зачислен поздно. Начисленный из-за этого штраф {amount} будет возвращён. Писать "
-            "жалобу не нужно. Приносим извинения за неудобства. Sandbox Bank"
+            "жалобу не нужно. Приносим извинения за неудобства. Demo Bank"
         ),
         illegal_fee.TYPE: (
             "Уважаемый(ая) {name}! При собственной проверке банк обнаружил, что по кредиту {loan} была удержана "
             "комиссия {amount}, которой нет в договоре. Эта сумма будет возвращена. Писать жалобу не нужно. "
-            "Приносим извинения за неудобства. Sandbox Bank"
+            "Приносим извинения за неудобства. Demo Bank"
         ),
     },
 }

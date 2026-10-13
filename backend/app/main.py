@@ -204,7 +204,7 @@ def _store(world_id: str) -> Iterator[sqlite3.Connection]:
 
 
 def _complaint_shape(complaint, states: dict) -> schemas.Complaint:
-    verdict, action = states.get(complaint.id, (None, None))
+    verdict, action, to_return = states.get(complaint.id, (None, None, None))
     return schemas.Complaint(
         complaint_id=complaint.id, customer_id=complaint.customer_id, customer_name=complaint.customer_name,
         contract_id=complaint.contract_id, text=complaint.text, lang=complaint.lang, channel=complaint.channel,
@@ -212,6 +212,7 @@ def _complaint_shape(complaint, states: dict) -> schemas.Complaint:
         status=DECIDED[action] if action else ("CHECKED" if verdict else "NEW"),
         answer_due=None,  # the deadline is not verified yet (DECISIONS, legal fact b)
         verdict=verdict,
+        to_return=to_return,
     )
 
 
@@ -553,6 +554,60 @@ def scan(finding_id: str, world: WorldId, actor: ActingAs) -> ScanResult:
             "never_complained": result.silent, "to_return": result.total_excess, "elapsed_ms": elapsed_ms,
         })
     return result.model_copy(update={"elapsed_ms": elapsed_ms})
+
+
+# --- The landing page (V2_PLAN W2, D-048) -----------------------------------
+
+# The complaint the landing page tells: the first one typed on the default demo bank (seed 2026).
+LANDING_CASE = os.environ.get("LANDING_CASE", "C-0306")
+# One answer is kept until the next action on the bank (any action writes the audit log) or for 10 minutes.
+_landing_kept: dict[tuple, tuple[float, schemas.LandingStory]] = {}
+
+
+@app.get("/api/landing", response_model=schemas.LandingStory)
+def landing_story() -> schemas.LandingStory:
+    """The case of the landing page and everyone else with the same mistake, on the default demo bank.
+    Unlike Find others it writes nothing, so a visit to the landing page leaves no audit entry."""
+    world_id = DEFAULT_WORLD_ID
+    with _store(world_id) as store:
+        key = (str(db.worlds_dir()), LANDING_CASE, audit.newest(store))
+        kept = _landing_kept.get(key)
+        if kept and time.monotonic() - kept[0] < 600:
+            return kept[1]
+        stored = db.load_case(store, LANDING_CASE)
+        if not stored:
+            raise ApiError(404, "NOT_FOUND", "The complaint of the landing page has not been checked on the demo bank.")
+        stored["decision"] = db.load_decision(store, LANDING_CASE)
+        chain_intact = audit.first_broken(store) is None
+        trail = audit.trail(store, LANDING_CASE, 4)
+    case = CaseResult.model_validate(stored)
+    finding = next((item for item in case.findings if item.amount_excess > 0), None)
+    if not finding:
+        raise ApiError(404, "NOT_FOUND", "The complaint of the landing page found no money to return.")
+    with _bank(world_id) as bank:
+        found = checks.findings(world_id, bank)
+        result = scanning.scan(finding.type, found, bank)
+        with _store(world_id) as store:
+            incident = next((item for item in incidents.all_incidents(store, found, bank) if item.finding_type == finding.type), None)
+    if not incident:
+        raise ApiError(404, "NOT_FOUND", "The mistake of the landing page is not an incident on the demo bank.")
+    rows = []
+    for item in result.items:
+        kept = [debit for debit in item.debits if debit.status == "SUCCESS" and not debit.returned]
+        if len(kept) < 2:
+            continue
+        rows.append(schemas.StoryRow(
+            contract_id=item.contract_id, customer_name=item.customer_name, complained=item.complained,
+            due_date=item.due_date, amount_excess=item.amount_excess, taken=[debit.at for debit in kept],
+            cards=[debit.card for debit in kept], batch_run_id=kept[0].batch_run_id,
+        ))
+    built = world.get_world(world_id)
+    story = schemas.LandingStory(
+        case=case, rows=rows, incident=incident, trail=trail, chain_intact=chain_intact, loans=built["size"] if built else 0,
+    )
+    _landing_kept.clear()
+    _landing_kept[key] = (time.monotonic(), story)
+    return story
 
 
 # --- FeeGuard: checks of the whole bank and incidents (D-039, D-040) ------

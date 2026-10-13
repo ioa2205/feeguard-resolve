@@ -322,6 +322,9 @@ class Complaint(Shape):
     # None until the answer deadline is verified (DECISIONS, legal fact b).
     answer_due: date | None
     verdict: Verdict | None
+    # What FeeGuard's check found to return, in soʻm; None until the complaint is checked.
+    # A person's correction is not in it: the case holds that.
+    to_return: Som | None = None
 
 
 class ComplaintList(Shape):
@@ -510,6 +513,17 @@ class Cause(Shape):
     suggested_fix_t: Words | None = None
 
 
+class ScanDebit(Shape):
+    """One debit behind a finding, for the timeline of every affected loan (D-045)."""
+
+    at: NaiveDatetime
+    card: str  # masked label, "HUMO ··4471"
+    amount: Som
+    status: DebitStatus
+    returned: bool
+    batch_run_id: str | None = None  # the billing run that took it
+
+
 class ScanItem(Shape):
     contract_id: Id
     customer_id: Id
@@ -521,6 +535,8 @@ class ScanItem(Shape):
     days_early: int | None
     complained: bool
     complaint_id: Id | None
+    due_date: date | None = None  # the installment's due date (D-045)
+    debits: list[ScanDebit] = Field(default_factory=list)  # oldest first (D-045)
 
 
 class ScanResult(Shape):
@@ -770,6 +786,31 @@ class AuditEntry(Shape):
     payload: dict[str, Any]
     prev_hash: Sha256
     hash: Sha256
+
+
+class StoryRow(Shape):
+    """One loan of the landing page's strip: the debits kept from one installment, oldest first."""
+
+    contract_id: Id
+    customer_name: str
+    complained: bool
+    due_date: date | None
+    amount_excess: Som
+    taken: list[NaiveDatetime]
+    cards: list[str]  # masked labels, "HUMO ··4471", one per debit
+    batch_run_id: str | None = None  # the billing run that took the first one
+
+
+class LandingStory(Shape):
+    """The one case the landing page tells (V2_PLAN W2), on the default demo bank, and everyone
+    else the same mistake hit. Reading it writes nothing, not even to the audit log (D-048)."""
+
+    case: CaseResult
+    rows: list[StoryRow]
+    incident: Incident
+    trail: list[AuditEntry]  # the log from the moment the complaint was received, oldest first
+    chain_intact: bool
+    loans: Count  # loans in the demo bank
 
 
 class AuditLog(Shape):

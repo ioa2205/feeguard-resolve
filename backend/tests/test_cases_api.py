@@ -131,6 +131,10 @@ def test_a_checked_complaint_can_be_opened_again_and_shows_in_the_list(client, w
 
     assert opened == checked
     assert (listed["status"], listed["verdict"]) == ("CHECKED", "SUPPORTED")
+    # The list carries what the check found to return, so the screen need not open every case.
+    assert listed["to_return"] == checked["total_excess"] > 0
+    unchecked = [c for c in client.get("/api/complaints?status=NEW&limit=500").json()["items"]]
+    assert unchecked and all(c["to_return"] is None for c in unchecked)
 
 
 def test_a_person_confirms_once_and_the_complaint_is_closed(client, world):
@@ -294,6 +298,21 @@ def test_the_scan_finds_everyone_in_the_answer_key_and_splits_them(client, world
     assert [item.complained for item in result.items] == sorted((item.complained for item in result.items), reverse=True)
     assert all(item.complaint_id for item in result.items if item.complained)
     assert result.cause.attributes and result.cause.suggested_fix  # at least 20 findings: a cause is named (A8)
+
+
+def test_the_scan_gives_each_double_debit_its_due_date_and_both_debits(client, world):
+    """The timeline of every affected loan is drawn from these (D-045): no number is made up on screen."""
+    finding = first_finding(client, world, "DOUBLE_DEBIT")
+    result = ScanResult.model_validate(client.post(f"/api/findings/{finding['finding_id']}/scan").json())
+
+    for item in result.items:
+        kept = [debit for debit in item.debits if debit.status == "SUCCESS" and not debit.returned]
+        assert item.due_date is not None
+        assert len(kept) >= 2, item.contract_id
+        assert [debit.at for debit in item.debits] == sorted(debit.at for debit in item.debits)
+        assert all("··" in debit.card for debit in item.debits)
+        assert all(debit.batch_run_id for debit in kept)  # a double debit comes from a billing run
+        assert 0 < item.amount_excess < sum(debit.amount for debit in kept)
 
 
 def test_the_scan_gives_each_contract_the_same_findings_as_checking_it_alone(world):

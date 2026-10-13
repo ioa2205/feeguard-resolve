@@ -52,6 +52,34 @@ def first_broken(store: sqlite3.Connection) -> str | None:
     return None
 
 
+def newest(store: sqlite3.Connection) -> int:
+    """The number of the newest entry, 0 when the log is empty: it changes with every action."""
+    (number,) = store.execute("SELECT coalesce(max(id), 0) FROM audit_log").fetchone()
+    return number
+
+
+def trail(store: sqlite3.Connection, complaint_id: str, count: int) -> list[dict]:
+    """A stretch of the chain, oldest first: the first entry about this complaint (received, or
+    checked when it was generated with the bank) and the ones after it. Empty when there is none."""
+    received = [
+        number for number, payload_json in store.execute(
+            "SELECT id, payload_json FROM audit_log WHERE action IN ('COMPLAINT_RECEIVED', 'COMPLAINT_CHECKED') ORDER BY id"
+        )
+        if json.loads(payload_json).get("complaint_id") == complaint_id
+    ]
+    if not received:
+        return []
+    rows = store.execute(
+        "SELECT id, at, actor, action, payload_json, prev_hash, hash FROM audit_log WHERE id >= ? ORDER BY id LIMIT ?",
+        (received[0], count),
+    )
+    return [
+        {"id": audit_id(number), "at": at, "actor": actor, "action": action, "payload": json.loads(payload_json),
+         "prev_hash": prev_hash, "hash": stored}
+        for number, at, actor, action, payload_json, prev_hash, stored in rows
+    ]
+
+
 def entries(store: sqlite3.Connection, limit: int, offset: int) -> tuple[list[dict], int]:
     """A page of entries, the newest first, and how many there are."""
     (total,) = store.execute("SELECT count(*) FROM audit_log").fetchone()

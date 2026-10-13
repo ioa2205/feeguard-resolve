@@ -197,6 +197,17 @@ class Bank:
         """Every customer of the bank, by id."""
         return {row[0]: Customer(*row) for row in self._db.execute(self._CUSTOMER)}
 
+    def card_labels(self, card_ids: Iterable[str]) -> dict[str, str]:
+        """The masked label of each card, such as "HUMO ··4471", by card id."""
+        ids = sorted(set(card_ids))
+        labels: dict[str, str] = {}
+        for start in range(0, len(ids), 900):  # below SQLite's limit of bound values
+            part = ids[start:start + 900]
+            rows = self._db.execute(
+                f"SELECT id, network, last4 FROM cards WHERE id IN ({', '.join('?' * len(part))})", part)
+            labels.update((card_id, f"{network} ··{last4}") for card_id, network, last4 in rows)
+        return labels
+
     def find_customers(self, search: str, limit: int) -> tuple[list[Customer], int]:
         """Customers whose name or id contains `search`, in id order, and how many there are."""
         escaped = search.strip().replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")

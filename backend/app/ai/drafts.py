@@ -21,7 +21,7 @@ from .normalize_amount import find_amounts
 from .parse_complaint import detect_lang
 
 NBSP = " "
-BANK = "Sandbox Bank"
+BANK = "Demo Bank"  # the invented bank of the demo; a real bank signs with its own name
 
 MONTHS = {
     "uz_latn": ("yanvar", "fevral", "mart", "aprel", "may", "iyun", "iyul", "avgust", "sentabr", "oktabr", "noyabr", "dekabr"),

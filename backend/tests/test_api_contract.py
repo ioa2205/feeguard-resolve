@@ -49,13 +49,19 @@ CHECKS_AND_INCIDENTS = {
 }
 
 
+# Added by DECISIONS D-048: the landing page's story, read-only.
+LANDING = {
+    ("get", "/api/landing"),
+}
+
+
 def _published(client):
     paths = client.get("/api/openapi.json").json()["paths"]
     return {(method, path) for path, methods in paths.items() for method in methods}
 
 
 def test_the_published_paths_are_exactly_the_frozen_list(client):
-    assert _published(client) == PART_10 | ADDED | PRESETS | CHECKS_AND_INCIDENTS
+    assert _published(client) == PART_10 | ADDED | PRESETS | CHECKS_AND_INCIDENTS | LANDING
 
 
 def test_every_path_is_built_and_none_answers_501_any_more():

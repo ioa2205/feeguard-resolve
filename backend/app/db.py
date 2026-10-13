@@ -100,14 +100,15 @@ def load_decision(store: sqlite3.Connection, case_id: str) -> dict | None:
     return dict(zip(names, row)) if row else None
 
 
-def case_states(store: sqlite3.Connection) -> dict[str, tuple[str, str | None]]:
-    """For every checked complaint: (verdict, action of its decision or None)."""
+def case_states(store: sqlite3.Connection) -> dict[str, tuple[str, str | None, int]]:
+    """For every checked complaint: (verdict, action of its decision or None, soʻm to return)."""
     rows = store.execute(
         """SELECT c.id, c.verdict,
-                  (SELECT d.action FROM decisions d WHERE d.case_id = c.id ORDER BY d.id DESC LIMIT 1)
+                  (SELECT d.action FROM decisions d WHERE d.case_id = c.id ORDER BY d.id DESC LIMIT 1),
+                  c.excess_amount
            FROM cases c"""
     )
-    return {case_id: (verdict, action) for case_id, verdict, action in rows}
+    return {case_id: (verdict, action, to_return) for case_id, verdict, action, to_return in rows}
 
 
 def finding_type(store: sqlite3.Connection, finding_id: str) -> str | None:

@@ -188,15 +188,24 @@ def scan(finding_type: str, found: BankFindings, bank: Bank) -> schemas.ScanResu
     for complaint in bank.complaints():
         complaint_of.setdefault(complaint.customer_id, complaint.id)  # the first complaint of each customer
 
+    # The due date and the debits of each finding, so every affected loan can be drawn on one time axis (D-045).
+    labels = bank.card_labels(debit.card_id for finding in findings for debit in finding.evidence.debits)
     items = []
     for finding in findings:
         customer = customers[found.owner_of[finding.contract_id]]
         complaint_id = complaint_of.get(customer.id)
+        due = next((row.due_date for row in finding.evidence.schedule_rows if row.n == finding.installment_n), None)
         items.append(schemas.ScanItem(
             contract_id=finding.contract_id, customer_id=customer.id, customer_name=customer.full_name,
             region=customer.region, installment_n=finding.installment_n, amount_excess=finding.amount_excess,
             amount_affected=finding.amount_affected, days_early=finding.days_early,
-            complained=complaint_id is not None, complaint_id=complaint_id,
+            complained=complaint_id is not None, complaint_id=complaint_id, due_date=due,
+            debits=[
+                schemas.ScanDebit(at=debit.created_at, card=labels.get(debit.card_id, "card"), amount=debit.amount,
+                                  status=debit.status, returned=debit.reversed_by is not None,
+                                  batch_run_id=debit.batch_run_id)
+                for debit in sorted(finding.evidence.debits, key=lambda debit: debit.created_at)
+            ],
         ))
     # The customers who complained first, then by loan.
     items.sort(key=lambda item: (not item.complained, item.contract_id, item.installment_n or 0))
