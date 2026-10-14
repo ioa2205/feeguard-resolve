@@ -10,8 +10,8 @@ import type { ChartData, ChartTheme, ChartWords } from '../landing/chart'
 import { C, dayMonth, fullDate, minutes } from '../landing/copy'
 import type { ScanItem, TimelineEvent, TimelineRow } from '../types'
 
-const LIGHT: ChartTheme = { bg: '#ffffff', ink: '#000000', ink2: '#5c5c5c', ink3: '#a3a3a3', rule: '#e6e6e6', band: '#f4f4f4', wrong: '#c8102e' }
-const DARK: ChartTheme = { bg: '#000000', ink: '#ffffff', ink2: '#a3a3a3', ink3: '#5c5c5c', rule: '#2e2e2e', band: '#141414', wrong: '#ff4a3d' }
+const LIGHT: ChartTheme = { bg: '#ffffff', ink: '#000000', ink2: '#5c5c5c', ink3: '#a3a3a3', rule: '#e6e6e6', band: '#f4f4f4', wrong: '#e71336' }
+const DARK: ChartTheme = { bg: '#000000', ink: '#ffffff', ink2: '#a3a3a3', ink3: '#5c5c5c', rule: '#2e2e2e', band: '#141414', wrong: '#e71336' }
 
 const kept = (event: TimelineEvent) => event.kind === 'TAKEN' && event.debit_status === 'SUCCESS'
 

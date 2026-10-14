@@ -25,8 +25,8 @@ import { LangMenu } from './LangMenu'
 import { loadStory } from './story'
 import type { StoryView } from './story'
 
-const LIGHT: ChartTheme = { bg: '#ffffff', ink: '#000000', ink2: '#5c5c5c', ink3: '#a3a3a3', rule: '#e6e6e6', band: '#f5f5f5', wrong: '#c8102e' }
-const DARK: ChartTheme = { bg: '#000000', ink: '#ffffff', ink2: '#a3a3a3', ink3: '#5c5c5c', rule: '#2e2e2e', band: '#141414', wrong: '#ff4a3d' }
+const LIGHT: ChartTheme = { bg: '#ffffff', ink: '#000000', ink2: '#5c5c5c', ink3: '#a3a3a3', rule: '#e6e6e6', band: '#f5f5f5', wrong: '#e71336' }
+const DARK: ChartTheme = { bg: '#000000', ink: '#ffffff', ink2: '#a3a3a3', ink3: '#5c5c5c', rule: '#2e2e2e', band: '#141414', wrong: '#e71336' }
 const KUN = 'https://kun.uz/news/2025/10/03/markaziy-bank-3-ta-tijorat-bankini-istemolchilar-huquqlarini-buzgani-uchun-jarimaga-tortdi'
 const SPOT = 'https://www.spot.uz/oz/2025/10/03/three-bank/'
 

@@ -18,8 +18,7 @@ body { margin: 0; }
   --line: #e6e6e6;        /* tracks behind moving lines only */
   --night: #141414;       /* a panel on black */
   --night-2: #262626;
-  --red: #c8102e;         /* money taken wrongly; white on it 5.9:1 */
-  --red-n: #ff4a3d;       /* the same on black, 6.3:1 */
+  --red: #e71336;         /* money taken wrongly, the one red: 4.6:1 on white, 4.5:1 on black, white on it 4.6:1 */
   --blue: #0040ff;        /* a person's decision; white on it 6.6:1 */
   --r-l: 20px;
   --r-m: 14px;
@@ -57,7 +56,6 @@ body { margin: 0; }
 .fg .g + .g { margin-left: .2em; }
 .fg .cur { font-size: .7em; font-weight: 500; margin-left: .25em; letter-spacing: 0; }
 .fg .wrong { color: var(--red); }
-.fg .dark .wrong { color: var(--red-n); }
 .fg .muted { color: var(--grey); }
 .fg .dark .muted { color: var(--grey-n); }
 .fg .id { font-variant-numeric: tabular-nums; letter-spacing: .01em; white-space: nowrap; }
@@ -95,7 +93,6 @@ body { margin: 0; }
 .fg-top .brand { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 16.5px; white-space: nowrap; }
 .fg-top .brand svg { display: block; overflow: visible; }
 .fg-top .brand .d2 { fill: var(--red); transition: fill .3s; }
-.fg-top.on-dark .brand .d2 { fill: var(--red-n); }
 .fg-top .brand .d1 { fill: currentColor; }
 .fg-top nav { display: flex; gap: 22px; font-size: 14.5px; font-weight: 500; }
 .fg-top nav a { display: inline-flex; align-items: center; gap: 7px; color: var(--grey); transition: color .15s; white-space: nowrap; }
@@ -321,7 +318,7 @@ body { margin: 0; }
 .fg .night canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
 .fg .key { display: flex; flex-wrap: wrap; gap: 6px 18px; margin-top: 16px; font-size: 13.5px; color: var(--grey-n); }
 .fg .key i { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: var(--white); margin-right: 7px; }
-.fg .key i.r { background: var(--red-n); }
+.fg .key i.r { background: var(--red); }
 
 /* --- Incidents ---------------------------------------------------------------------------- */
 .fg .incs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
