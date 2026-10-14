@@ -358,6 +358,16 @@ a.inc:hover { transform: translateY(-2px); }
 .fg .picker button[aria-pressed="true"] { background: var(--white); }
 .fg .picker button b { font-weight: 600; }
 .fg .picker button span { font-size: 12.5px; color: var(--grey); white-space: nowrap; }
+.fg .examples .lbl { padding: 8px 14px 6px; }
+.fg .examples li + li { margin-top: 2px; }
+.fg .examples button { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 12px; align-items: baseline; width: 100%; padding: 11px 14px; border: 0; border-radius: 12px; background: transparent; text-align: left; cursor: pointer; }
+.fg .examples button:hover { background: var(--soft-2); }
+.fg .examples button[aria-pressed="true"] { background: var(--white); }
+.fg .examples button b { font-weight: 600; }
+.fg .examples button .id { font-size: 12.5px; color: var(--grey); }
+.fg .examples button .hint { grid-column: 1 / -1; font-size: 13.5px; color: var(--grey); }
+.fg .write .btn--ex { background: var(--night-2); color: var(--white); }
+.fg .write .btn--ex:hover { background: var(--grey); }
 
 /* --- The live run: each step turns done when the server answers -------------------------- */
 .fg .run { padding: 6px; }
@@ -461,6 +471,7 @@ a.inc:hover { transform: translateY(-2px); }
   .fg .sub { font-size: 16px; }
   .fg .head { padding: 28px 0 20px; }
   .fg .grid2, .fg .cols, .fg .cols--side, .fg .incs, .fg .phone { grid-template-columns: minmax(0, 1fr); }
+  .fg .cols--side.chosen > .pick-col { order: 2; }
   .fg .waiting { width: 100%; justify-content: space-between; flex-wrap: wrap; gap: 12px 16px; padding: 16px 16px 16px 20px; }
   .fg .tools .search { width: 100%; }
   .fg .crow { grid-template-columns: minmax(0, 1fr) auto; gap: 6px 12px; padding: 14px 14px 14px 16px; }

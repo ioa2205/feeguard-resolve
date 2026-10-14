@@ -22,7 +22,8 @@ const router = createBrowserRouter([
     children: [{ index: true }, { path: '/uz' }, { path: '/ru' }, { path: '/en' }],
   },
   // The guided run comes with V2_PLAN W4; until then the demo opens the product.
-  { path: '/demo', element: <Navigate to="/app" replace /> },
+  // The demo starts on the phone of the landing page's customer (product/Phone.tsx, EXAMPLES).
+  { path: '/demo', element: <Navigate to="/app/phone?customer=CU-00662" replace /> },
   // FeeGuard, the product: everything lives under /app (V2_PLAN W1.5).
   {
     ...page(() => import('./Product')),
